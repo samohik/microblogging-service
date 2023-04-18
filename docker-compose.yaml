@@ -1,0 +1,21 @@
+version: '3.11'
+services:
+#  flask:
+#    build:
+#      context: .
+#    env_file:
+#      - .env
+#    command: python Flask/main.py
+#    ports:
+#      - '5000:5000'
+#    depends_on:
+#      - postgres
+
+
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - '${DB_PORT}:5432'
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
