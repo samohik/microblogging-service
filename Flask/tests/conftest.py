@@ -1,7 +1,7 @@
 import pytest
 
 from Flask.main import create_app
-from Flask.models import db as _db, User, Follower
+from Flask.models import db as _db, User, Follower, Test
 
 
 @pytest.fixture
@@ -12,26 +12,27 @@ def app():
 
     with _app.app_context():
         _db.create_all()
-        user_1 = User(
-            name="Jonny"
-        )
+        user_1 = User(name="Jonny")
         follower = User(
             name="Kate",
         )
-        # following = User(
-        #     name="V",
-        # )
-        # fr = Follower(
-        #     user_id=1,
-        #     follower_id=follower,
-        # )
+        following = User(
+            name="V",
+        )
+        _db.session.add(user_1)
+        _db.session.add(follower)
+        _db.session.add(following)
+
+        test = Test(
+            follower_id=follower.id,
+            following_id=following.id,
+        )
+        _db.session.add(test)
+
         # user_1.follower = fr
         # fing = Follower(
         #     user_id=1
         # )
-
-        _db.session.add(user_1)
-        # _db.session.add(following)
         # _db.session.add(follower)
         _db.session.commit()
 

@@ -1,8 +1,16 @@
+from Flask.models import Test
+
+
 def test_app_config(app):
     assert not app.config["DEBUG"]
     assert app.config["TESTING"]
     assert app.config["SQLALCHEMY_DATABASE_URI"] == "sqlite:///test.db"
 
+
+def test_foreign(app):
+    response = Test.get_all()
+    assert response.id == 1
+    assert response.following_id == 3
 
 # class TestTweetsApi:
 #     def test_get(self, client):
