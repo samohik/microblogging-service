@@ -1,16 +1,8 @@
-from Flask.models import Test
-
-
 def test_app_config(app):
     assert not app.config["DEBUG"]
     assert app.config["TESTING"]
     assert app.config["SQLALCHEMY_DATABASE_URI"] == "sqlite:///test.db"
 
-
-def test_foreign(app):
-    response = Test.get_all()
-    assert response.id == 1
-    assert response.following_id == 3
 
 # class TestTweetsApi:
 #     def test_get(self, client):
@@ -30,7 +22,7 @@ class TestTweetsLikesApi:
     def test_post(self, client):
         response = client.post("/api/tweets/1/likes")
         result = {"result": True}
-        assert response.status_code == 200
+        assert response.status_code == 201
         assert response.json == result
 
     def test_delete(self, client):
@@ -47,13 +39,13 @@ class TestMediaApi:
         response = client.post("/api/medias")
         result = {"result": True, "tweet_id": 1}
 
-        assert response.status_code == 200
+        assert response.status_code == 201
         assert response.json == result
 
 
 class TestUserApi:
     def test_get_id(self, client):
-        response = client.get("/api/users/1/follow")
+        response = client.get("/api/users/1")
         result = {
             "result": "true",
             "user": {
@@ -68,7 +60,17 @@ class TestUserApi:
 
     def test_get_me(self, client):
         response = client.get("/api/users/me")
+        result = {
+            "result": "true",
+            "user": {
+                "id": 1,
+                "name": "Jonny",
+                "followers": [{"id": 3, "name": "Alt"}],
+                "following": [{"id": 2, "name": "V"}],
+            },
+        }
         assert response.status_code == 200
+        assert response.json == result  # TODO (1, 'Jonny', None, None)
 
     def test_post(self, client):
         response = client.post("/api/users/1/follow", data=dict())

@@ -1,9 +1,11 @@
-from flask import Flask
+import os.path
+
+from flask import Flask, request
 from flask_restful import Api, Resource
+from flask_swagger_ui import get_swaggerui_blueprint
 
 from Flask.models import db, User
 from Flask.src.config import DB_HOST, DB_NAME, DB_PASS, DB_USER, DB_PORT
-
 
 # app.config[
 #     "SQLALCHEMY_DATABASE_URI"
@@ -11,10 +13,19 @@ from Flask.src.config import DB_HOST, DB_NAME, DB_PASS, DB_USER, DB_PORT
 # app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 
+# swagger specific
+SWAGGER_URL = "/swagger"
+API_URL = os.path.normpath("/static/swagger.json")
+SWAGGERUI_BLUEPRINT = get_swaggerui_blueprint(
+    SWAGGER_URL, API_URL, config={"app_name": "MicroBlogging"}
+)
+
+
 def create_app():
     app = Flask(__name__)
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///prod.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=SWAGGER_URL)
 
     api = Api(app)
     db.init_app(app)
@@ -96,7 +107,7 @@ def create_app():
             response = {"result": False}
             if id:
                 response = {"result": True}
-            return response, 200
+            return response, 201
 
         def delete(self, id: int):
             """
@@ -127,12 +138,32 @@ def create_app():
             }
             """
             response = {"result": True, "tweet_id": 1}
-            return response, 200
+            return response, 201
 
     class UserApi(Resource):
+        def get_me(self):
+            """
+            GET /api/users/me
+            HTTP-Params:
+            api-key: str
+            """
+            data = User.get_me()
+            print(data)
+            response = {
+                "result": "true",
+                "user": {
+                    "id": data.id,
+                    "name": data.name,
+                    "followers": [{"id": "int", "name": "str"}],
+                    "following": [{"id": "int", "name": "str"}],
+                },
+            }
+            return response
+
         def get(self, id: int):
             """
             GET /api/users/<id>
+
             """
             response = {
                 "result": "true",
@@ -174,25 +205,48 @@ def create_app():
                 response = {"result": True}
             return response, 200
 
-    @app.route("/api/users/me", methods=["GET"])
-    def user_get_me():
-        """
-        GET /api/users/me
-        HTTP-Params:
-        api-key: str
-        """
-        data = User.get_me()
-        print(data)
-        response = {
-            "result": "true",
-            "user": {
-                "id": data.id,
-                "name": data.name,
-                "followers": [{"id": "int", "name": "str"}],
-                "following": [{"id": "int", "name": "str"}],
-            },
-        }
-        return response
+        def dispatch_request(self, *args, **kwargs):
+            # GET /api/users/me
+            path = "/api/users/me"
+            if path == request.path and request.method == "GET":
+                self.get_me()
+            else:
+                return super().dispatch_request(*args, **kwargs)
+
+            # # GET /api/users/<id>
+            # elif request.method == 'GET':
+            #     print(f'{request.path}')
+            #     self.get(id=kwargs['id'])
+            #
+            # # POST /api/users/<id>/follow
+            # elif request.method == 'POST' and 'follow' in request.path:
+            #     print(f'{request.path}')
+            #     self.post(id=kwargs['id'])
+            #
+            # # DELETE /api/users/<id>/follow
+            # elif request.method == 'DELETE' and 'follow' in request.path:
+            #     print(f'{request.path}')
+            #     self.delete(id=kwargs['id'])
+
+    # @app.route("/api/users/me", methods=["GET"])
+    # def user_get_me():
+    #     """
+    #     GET /api/users/me
+    #     HTTP-Params:
+    #     api-key: str
+    #     """
+    #     data = User.get_me()
+    #     print(data)
+    #     response = {
+    #         "result": "true",
+    #         "user": {
+    #             "id": data.id,
+    #             "name": data.name,
+    #             "followers": [{"id": "int", "name": "str"}],
+    #             "following": [{"id": "int", "name": "str"}],
+    #         },
+    #     }
+    #     return response
 
     api.add_resource(
         TweetsApi,
@@ -210,6 +264,8 @@ def create_app():
     )
     api.add_resource(
         UserApi,
+        "/api/users/me",
+        "/api/users/<int:id>",
         "/api/users/<int:id>/follow",
     )
 
