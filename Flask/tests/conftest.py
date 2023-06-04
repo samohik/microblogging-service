@@ -1,7 +1,7 @@
 import pytest
 
 from Flask.main import create_app
-from Flask.models import db as _db, User, Followers, Following
+from Flask.models import db as _db, User, Follow, Tweet, Like
 
 
 @pytest.fixture
@@ -13,33 +13,73 @@ def app():
     with _app.app_context():
         _db.create_all()
 
+        # Users
         user_me = User(name="Jonny")
-
-        # users
         user_id_2 = User(
             name="V",
         )
         user_id_3 = User(
             name="Alt",
         )
-
-        # connections
-        following = Following(
-            id=user_id_2.id,
-            name=user_id_2.name,
-            user_id=user_me.id,
+        user_id_4 = User(
+            name="Jade",
         )
-        followers = Followers(
-            id=user_id_3.id,
-            name=user_id_3.name,
-            user_id=user_me.id,
-        )
-
         _db.session.add(user_me)
-        _db.session.add(user_id_3)
         _db.session.add(user_id_2)
-        _db.session.add(followers)
-        _db.session.add(following)
+        _db.session.add(user_id_3)
+        _db.session.add(user_id_4)
+        _db.session.flush()
+
+        # Subscribers
+        follower_me = Follow(
+            to_user_id=user_me.id,
+            from_user_id=user_id_3.id,
+        )
+
+        # Am signed to
+        following_me = Follow(
+            to_user_id=user_id_2.id,
+            from_user_id=user_me.id,
+        )
+        following_2 = Follow(
+            to_user_id=user_id_4.id,
+            from_user_id=user_id_2.id,
+        )
+
+        # Tweet
+        tweet_me = Tweet(
+            content='Test',
+            user_id=user_me.id,
+        )
+        tweet_user_2 = Tweet(
+            content='Test2',
+            user_id=user_id_2.id,
+        )
+
+        _db.session.add(follower_me)
+        _db.session.add(following_me)
+        _db.session.add(following_2)
+        _db.session.add(tweet_me)
+        _db.session.add(tweet_user_2)
+        _db.session.flush()
+
+        # Like
+        like_to_user_2 = Like(
+            user_id=user_me.id,
+            tweet_id=tweet_user_2.id,
+        )
+        like_from_user_2 = Like(
+            user_id=user_id_2.id,
+            tweet_id=tweet_me.id,
+        )
+        like_from_user_4 = Like(
+            user_id=user_id_4.id,
+            tweet_id=tweet_me.id,
+        )
+
+        _db.session.add(like_to_user_2)
+        _db.session.add(like_from_user_2)
+        _db.session.add(like_from_user_4)
         _db.session.commit()
 
         yield _app

@@ -33,3 +33,5 @@ SQLAlchemy==2.0.9
 starlette==0.26.1
 typing_extensions==4.5.0
 Werkzeug==2.2.3
+
+marshmallow~=3.19.0
