@@ -1,0 +1,255 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "MicroBlogging",
+    "description": "Test",
+    "version": "1.0.0"
+  },
+  "basePath": "/",
+
+
+  "tags": [
+    {
+      "name": "TweetAPi",
+      "description": "Работа с твитами."
+    },
+    {
+      "name": "MediaApi",
+      "description": "Media."
+    },
+    {
+      "name": "UserApi",
+      "description": "Users."
+    }
+  ],
+
+
+  "paths": {
+    "/api/tweets": {
+      "get": {
+        "tags": ["TweetAPi"],
+        "description": "В ответ должен вернуться json со списком твитов для ленты этого пользователя.",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/components/schemas/Tweets"
+            }
+          },
+          "default": {
+            "description": "В случае любой ошибки на стороне бэкенда возвращайте сообщение следующего формата:"
+          }
+        }
+      }
+    },
+
+
+    "/api/tweets/{id}": {
+      "delete": {
+        "tags": ["TweetAPi"],
+        "parameters": [
+          {
+            "in": "path",
+            "required": true,
+            "description": "User id",
+            "name": "int",
+            "type": "integer"
+          }
+        ],
+        "description": "В этом endpoint мы должны убедиться, что пользователь удаляет именно свой собственный твит.",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "В ответ должно вернуться сообщение о статусе операции."
+          },
+          "default": {
+            "description": "В случае любой ошибки на стороне бэкенда возвращайте сообщение следующего формата:"
+          }
+        }
+      }
+    },
+
+
+    "/api/medias": {
+      "post": {
+        "tags": ["MediaApi"],
+        "description": "Required to download files from a tweet",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "properties": {
+                 "result": {
+                   "type": "boolean"
+                 },
+                "media_id": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "В случае любой ошибки на стороне бэкенда возвращайте сообщение следующего формата:"
+          }
+        }
+      }
+    },
+
+
+
+    "/api/users/{id}": {
+      "get": {
+        "tags": ["UserApi"],
+        "description": "Test",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/components/schemas/User"
+            }
+          },
+          "default": {
+            "description": "В случае любой ошибки на стороне бэкенда возвращайте сообщение следующего формата:"
+          }
+        }
+      }
+    },
+
+
+    "/api/users/me": {
+      "get": {
+        "tags": ["UserApi"],
+        "description": "В ответ должен вернуться json со списком пользователей.",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/components/schemas/User"
+            }
+          },
+          "default": {
+            "description": "В случае любой ошибки на стороне бэкенда возвращайте сообщение следующего формата:"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Tweets": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "boolean"
+          },
+          "tweets":{
+            "type": "array"
+          },
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "content": {
+                "type": "string"
+              },
+              "attachments": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "author": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "likes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "user_id": {
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+
+
+      "User": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "boolean"
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              },
+              "followers": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "following": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
