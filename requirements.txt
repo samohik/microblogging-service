@@ -36,3 +36,4 @@ Werkzeug==2.2.3
 
 marshmallow~=3.19.0
 databases~=0.7.0
+httpx~=0.24.1

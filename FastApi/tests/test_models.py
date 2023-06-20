@@ -1,94 +1,16 @@
-import unittest
-
-from FastApi.database import Base
 from FastApi.models import User, Follow, Tweet, Like
-from FastApi.tests.conftest import engine_test, async_session
 
 
-class BaseTest(unittest.IsolatedAsyncioTestCase):
-    async def asyncSetUp(self):
-        engine = engine_test
-        self.session = async_session()
-
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-
-            # Users
-        user_me = User(name="Jonny")
-        user_id_2 = User(
-            name="V",
-        )
-        user_id_3 = User(
-            name="Alt",
-        )
-        user_id_4 = User(
-            name="Jade",
-        )
-        async with self.session.begin():
-            self.session.add(user_me)
-            self.session.add(user_id_2)
-            self.session.add(user_id_3)
-            self.session.add(user_id_4)
-            self.session.flush()
-
-        # Subscribers
-        follower_me = Follow(
-            to_user_id=user_me.id,
-            from_user_id=user_id_3.id,
-        )
-
-        # Am signed to
-        following_me = Follow(
-            to_user_id=user_id_2.id,
-            from_user_id=user_me.id,
-        )
-        following_2 = Follow(
-            to_user_id=user_id_4.id,
-            from_user_id=user_id_2.id,
-        )
-
-        # Tweet
-        tweet_me = Tweet(
-            content='Test',
-            user_id=user_me.id,
-        )
-        tweet_user_2 = Tweet(
-            content='Test2',
-            user_id=user_id_2.id,
-        )
-        async with self.session.begin():
-            self.session.add(follower_me)
-            self.session.add(following_me)
-            self.session.add(following_2)
-            self.session.add(tweet_me)
-            self.session.add(tweet_user_2)
-            self.session.flush()
-
-        # Like
-        like_to_user_2 = Like(
-            user_id=user_me.id,
-            tweet_id=tweet_user_2.id,
-        )
-        like_from_user_2 = Like(
-            user_id=user_id_2.id,
-            tweet_id=tweet_me.id,
-        )
-        like_from_user_4 = Like(
-            user_id=user_id_4.id,
-            tweet_id=tweet_me.id,
-        )
-
-    async def asyncTearDown(self):
-        # Close the session and drop the tables
-        await self.session.close()
-
-        engine = self.session.get_bind()
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
+async def test_db(async_db):
+    user = User(name='Test')
+    async_db.add(user)
+    await async_db.commit()
+    result = await async_db.get(User, 1)
+    assert result == 1
 
 
-class TestUser(BaseTest):
-    async def test_get_user(self):
+class TestUser:
+    async def test_get_user(self, db):
         data_2 = await User.get_user(2)
         data_wrong = await User.get_user(8)
 
@@ -186,7 +108,3 @@ class TestLike:
             user_id=3,
         )
         assert result is False
-
-
-if __name__ == '__main__':
-    unittest.main()

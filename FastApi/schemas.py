@@ -1,6 +1,9 @@
-from marshmallow import Schema, fields
+from pydantic import BaseModel
 
 
-class TweetSchema(Schema):
-    tweet_data = fields.String(required=True)
-    tweet_media_ids = fields.Dict(required=False)
+class TweetSchema(BaseModel):
+    tweet_data: str
+    tweet_media_ids: str
+
+    class Config:
+        orm_mode = True

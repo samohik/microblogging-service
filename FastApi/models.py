@@ -1,8 +1,8 @@
-import json
 from datetime import datetime
-from typing import List, Dict, Any, Tuple, Type
+from typing import List, Dict, Any
 
 from sqlalchemy import *
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import relationship, backref
 
 from FastApi.database import Base, async_session
@@ -19,7 +19,7 @@ class User(Base):
 
     @classmethod
     async def get_user(cls, id=1) -> dict[str, Any]:
-        async with async_session() as session:
+        async with AsyncSession() as session:
             data = await session.get(User, id)
             result = {}
             if data:
@@ -235,7 +235,7 @@ class Tweet(Base):
             return res
 
     @classmethod
-    async def get_tweets(cls, user_id: int) -> List[Any, ]:
+    async def get_tweets(cls, user_id: int) -> List[Any,]:
         async with async_session() as session:
             res = await session.query(Tweet).filter(
                 Tweet.user_id == user_id,
