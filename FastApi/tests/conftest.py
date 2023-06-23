@@ -1,6 +1,3 @@
-import asyncio
-from typing import AsyncGenerator
-
 import pytest
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -9,47 +6,34 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
-from FastApi.models import Base, User, Tweet, Follow
-from database import metadata
-from main import app
+from FastApi.models import *
+
 
 TEST_DATABASE = "sqlite+aiosqlite:///./test_app.db"
 
-engine_test = create_async_engine(TEST_DATABASE, poolclass=NullPool)
-test_async_session = sessionmaker(
-    bind=engine_test, class_=AsyncSession, expire_on_commit=False
-)
-metadata.bind = engine_test
+
+@pytest.fixture(scope="session")
+def engine():
+    engine_test = create_async_engine(TEST_DATABASE, poolclass=NullPool)
+    Base.metadata.create_all(engine_test)
+
+    yield engine
+
+    Base.metadata.drop_all(engine)
 
 
-async def override_get_async_session() -> AsyncGenerator[AsyncSession, None]:
-    async with test_async_session() as session:
+@pytest.fixture(scope="session")
+def async_db(engine):
+    test_async_session = sessionmaker(
+        bind=engine, class_=AsyncSession, expire_on_commit=False
+    )
+    yield test_async_session
+
+
+@pytest.fixture(scope="function")
+async def db(async_db):
+    async with async_db() as session:
         yield session
-
-
-# app.dependency_overrides[get_async_session] = override_get_async_session
-
-
-@pytest.fixture(scope="function")
-async def prepare_database():
-    async with engine_test.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all())
-    yield
-    async with engine_test.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all())
-
-
-@pytest.fixture(scope="function")
-async def event_loop():
-    loop = asyncio.get_event_loop()
-    yield loop
-
-
-@pytest.fixture(scope="function")
-async def async_db(prepare_database, event_loop):
-    async with test_async_session() as session:
-        yield session
-
 
 
 # async def x():

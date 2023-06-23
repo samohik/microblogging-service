@@ -1,12 +1,16 @@
-from fastapi import FastAPI
+import uvicorn
+from fastapi import FastAPI, APIRouter
 from marshmallow import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from Flask.models import User, Follow, Tweet, Like
-from Flask.schemas import TweetSchema
+from FastApi.models import User, Follow, Tweet, Like
+from FastApi.schemas import TweetSchema
 from database import Base, engine, get_db
 
+
 app = FastAPI()
+router = APIRouter()
+
 
 @app.on_event("startup")
 async def startup():
@@ -17,172 +21,166 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown():
     await engine.dispose()
-#
-#
-# class TweetsApi:
-#     @app.get('/api/tweets')
-#     async def get(self, db: AsyncSession = get_db()):
-#         """
-#         GET /api/tweets
-#         HTTP-Params:
-#         api-key: str
-#         """
-#         user_id = 1
-#         tweets = Tweet.get_tweets(user_id=user_id)
-#
-#         response = {
-#             "result": True,
-#             "tweets": [],
-#         }
-#         if tweets:
-#             for tweet in tweets:
-#                 likes = Like.get_likes(tweet_id=tweet.id)
-#                 response["tweets"].append(
-#                     {
-#                         "id": tweet.id,
-#                         "content": tweet.content,
-#                         "attachments": [],
-#                         "author": {
-#                             "id": 1,
-#                             "name": 'str',
-#                         },
-#                         "likes": [
-#                             {"user_id": x.user_id, "name": x.user_backref.name} for x in likes
-#                         ]
-#                     }
-#                 )
-#         return response, 200
-#
-#     def post(self):
-#         """
-#         POST /api/tweets
-#         HTTP-Params:
-#         api-key: str
-#         {
-#             “tweet_data”: string
-#             “tweet_media_ids”: Array[int]
-#         }
-#         """
-#         data = request.json
-#         schema = TweetSchema()
-#         response = {
-#             "result": False,
-#             "error_type": str,
-#             "error_message": str,
-#         }
-#         try:
-#             validated_data = schema.load(data)
-#         except ValidationError as e:
-#             response["error_type"] = e
-#             response["error_message"] = e.messages,
-#             return response, 400
-#
-#         content = validated_data['tweet_data']
-#         user_id = 1
-#
-#         tweet = Tweet.add_tweet(
-#             user_id=user_id,
-#             content=content,
-#         )
-#         if tweet:
-#             # todo  add_media
-#             # "tweet_media_ids": []
-#             # Media.add_media(item) for item in tweet_media_ids
-#
-#             response = {
-#                 "result": True,
-#                 "tweet_id": tweet.id,
-#             }
-#             return response, 201
-#         return response, 400
-#
-#     def delete(self, id: int):
-#         """
-#         DELETE /api/tweets/<id>
-#         HTTP-Params:
-#         api-key: str
-#         В ответ должно вернуться сообщение о статусе операции.
-#         {
-#             “result”: true
-#         }
-#         """
-#         user_id = 1
-#         tweet = Tweet.delete(
-#             user_id=user_id,
-#             tweet_id=id,
-#         )
-#         response = {
-#             "result": False,
-#             #     "error_type": e,
-#             #     "error_message": e.messages,
-#         }
-#         if tweet:
-#             response = {"result": True}
-#             return response, 204
-#         return response, 400
-#
-#     def post_likes(self, id: int):
-#         """
-#         POST /api/tweets/<id>/likes
-#         HTTP-Params:
-#         api-key: str
-#         В ответ должно вернуться сообщение о статусе операции.
-#         {
-#         “result”: true
-#         }
-#         """
-#         user_id = 1
-#         like = Like.add_like(
-#             user_id=user_id,
-#             tweet_id=id,
-#         )
-#         response = {
-#             "result": False,
-#             # todo error message
-#             # "error_type": e,
-#             # "error_message": e.messages,
-#         }
-#         if like:
-#             response = {"result": True}
-#         return response, 201
-#
-#     def delete_likes(self, id: int):
-#         """
-#         DELETE /api/tweets/<id>/likes
-#         HTTP-Params:
-#         api-key: str
-#         В ответ должно вернуться сообщение о статусе операции.
-#         {
-#             “result”: true
-#         }
-#         """
-#         user_id = 1
-#         like = Like.delete(
-#             user_id=user_id,
-#             tweet_id=id,
-#         )
-#         response = {
-#             "result": False,
-#             # todo error message
-#             # "error_type": e,
-#             # "error_message": e.messages,
-#         }
-#         if like:
-#             response = {"result": True}
-#             return response, 204
-#         return response, 400
-#
-#     def dispatch_request(self, *args, **kwargs):
-#         # POST /api/tweets/<id>/likes
-#         if "likes" in request.path and request.method == "POST":
-#             return self.post_likes(kwargs["id"])
-#
-#         # DELETE /api/tweets/<id>/likes
-#         elif "likes" in request.path and request.method == "DELETE":
-#             return self.delete_likes(kwargs["id"])
-#         else:
-#             return super().dispatch_request(*args, **kwargs)
-#
+
+
+class TweetsApi:
+    @router.get('/api/tweets')
+    async def get_tweets(self):
+        """
+        GET /api/tweets
+        HTTP-Params:
+        api-key: str
+        """
+        user_id = 1
+        tweets = await Tweet.get_tweets(user_id=user_id)
+
+        response = {
+            "result": True,
+            "tweets": [],
+        }
+        if tweets:
+            for tweet in tweets:
+                likes = Like.get_likes(tweet_id=tweet.id)
+                response["tweets"].append(
+                    {
+                        "id": tweet.id,
+                        "content": tweet.content,
+                        "attachments": [],
+                        "author": {
+                            "id": 1,
+                            "name": 'str',
+                        },
+                        "likes": [
+                            {"user_id": x.user_id, "name": x.user_backref.name} for x in likes
+                        ]
+                    }
+                )
+        return response, 200
+
+    @router.post('/api/tweets')
+    async def post_tweets(self, request):
+        """
+        POST /api/tweets
+        HTTP-Params:
+        api-key: str
+        {
+            “tweet_data”: string
+            “tweet_media_ids”: Array[int]
+        }
+        """
+        data = request.json
+        schema = TweetSchema()
+        response = {
+            "result": False,
+            "error_type": str,
+            "error_message": str,
+        }
+        try:
+            validated_data = schema.load(data)
+        except ValidationError as e:
+            response["error_type"] = e
+            response["error_message"] = e.messages,
+            return response, 400
+
+        content = validated_data['tweet_data']
+        user_id = 1
+
+        tweet = await Tweet.add_tweet(
+            user_id=user_id,
+            content=content,
+        )
+        if tweet:
+            # todo  add_media
+            # "tweet_media_ids": []
+            # Media.add_media(item) for item in tweet_media_ids
+
+            response = {
+                "result": True,
+                "tweet_id": tweet.id,
+            }
+            return response, 201
+        return response, 400
+
+    @router.delete('/api/tweets/{id}')
+    async def delete_tweets(self, id: int):
+        """
+        DELETE /api/tweets/<id>
+        HTTP-Params:
+        api-key: str
+        В ответ должно вернуться сообщение о статусе операции.
+        {
+            “result”: true
+        }
+        """
+        user_id = 1
+        tweet = await Tweet.delete(
+            user_id=user_id,
+            tweet_id=id,
+        )
+        response = {
+            "result": False,
+            #     "error_type": e,
+            #     "error_message": e.messages,
+        }
+        if tweet:
+            response = {"result": True}
+            return response, 204
+        return response, 400
+
+    @router.post('/api/tweets/{id}/likes')
+    async def post_likes(self, id: int):
+        """
+        POST /api/tweets/<id>/likes
+        HTTP-Params:
+        api-key: str
+        В ответ должно вернуться сообщение о статусе операции.
+        {
+        “result”: true
+        }
+        """
+        user_id = 1
+        like = await Like.add_like(
+            user_id=user_id,
+            tweet_id=id,
+        )
+        response = {
+            "result": False,
+            # todo error message
+            # "error_type": e,
+            # "error_message": e.messages,
+        }
+        if like:
+            response = {"result": True}
+        return response, 201
+
+    @router.delete('/api/tweets/{id}/likes')
+    async def delete_likes(self, id: int):
+        """
+        DELETE /api/tweets/<id>/likes
+        HTTP-Params:
+        api-key: str
+        В ответ должно вернуться сообщение о статусе операции.
+        {
+            “result”: true
+        }
+        """
+        user_id = 1
+        like = await Like.delete(
+            user_id=user_id,
+            tweet_id=id,
+        )
+        response = {
+            "result": False,
+            # todo error message
+            # "error_type": e,
+            # "error_message": e.messages,
+        }
+        if like:
+            response = {"result": True}
+            return response, 204
+        return response, 400
+
+
 # class MediaApi(Resource):
 #
 #     def post(self):
@@ -304,12 +302,11 @@ async def shutdown():
 #         else:
 #             return super().dispatch_request(*args, **kwargs)
 #
-# api.add_resource(
-#     TweetsApi,
-#     "/api/tweets",
-#     "/api/tweets/<int:id>",
-#     "/api/tweets/<int:id>/likes",
-# )
+
+
+app.include_router(
+    router
+)
 #
 # api.add_resource(
 #     MediaApi,
@@ -326,5 +323,4 @@ async def shutdown():
 
 
 if __name__ == "__main__":
-    # app.run(debug=True, host="0.0.0.0", port=5000)
-    ...
+    uvicorn.run(app, host="0.0.0.0", port=8000)
