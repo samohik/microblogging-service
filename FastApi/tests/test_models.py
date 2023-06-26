@@ -1,27 +1,27 @@
 import pytest
 
-# from FastApi.models import User, Follow, Tweet, Like
-from FastApi.models import User
+from FastApi.models import User, Follow, Tweet, Like
+# from FastApi.models import User
 
 
-async def test_db(db):
+async def test_db(async_db):
     user = User(name='Test')
-    db.add(user)
+    async_db.add(user)
 
-    await db.commit()
-    res = await db.get(User, 1)
-    assert res == 1
+    await async_db.commit()
+    res = await async_db.get(User, 1)
+    assert res.name == 'Jonny'
 
 
-# class TestUser:
-#     async def test_get_user(self, async_db):
-#         data_2 = User.get_user(2)
-#         data_wrong = User.get_user(8)
-#
-#         assert data_2 == {'id': 2, 'name': 'V'}
-#         assert data_wrong == {}
-#
-#
+class TestUser:
+    async def test_get_user(self, async_db):
+        data_2 = await User.get_user(2)
+        data_wrong = await User.get_user(8)
+
+        assert data_2 == {'id': 2, 'name': 'V'}
+        assert data_wrong == {}
+
+
 # class TestFollow:
 #     def test_get_follower_exist(self, db):
 #         result = Follow.get_follow(from_user=1, to_user=2)
