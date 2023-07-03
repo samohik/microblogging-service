@@ -1,12 +1,12 @@
 import uvicorn
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Depends
 from marshmallow import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from FastApi.models import User, Follow, Tweet, Like
 from FastApi.schemas import TweetSchema
 from database import Base, engine, get_db
-
+from utils import get_user, get_following, get_follower
 
 app = FastAPI()
 router = APIRouter()
@@ -199,53 +199,58 @@ class TweetsApi:
 #         response = {"result": True, "tweet_id": 1}
 #         return response, 201
 #
-# class UserApi(Resource):
-#     def get(self, id: int):
-#         """
-#         GET /api/users/<id>
-#         Пользователь может получить информацию о произвольном
-#          профиле по его id:
-#         """
-#         user_exist = User.get_user(id)
-#
-#         follower = Follow.get_follower(id)
-#         following = Follow.get_following(id)
-#
-#         if user_exist:
-#             response = {
-#                 "result": True,
-#                 "user": user_exist
-#             }
-#             response["user"].update({"followers": follower})
-#             response["user"].update({"following": following})
-#         else:
-#             response = {
-#                 "result": False,
-#                 #     "error_type": e,
-#                 #     "error_message": e.messages,
-#             }
-#             return response, 400
-#         return response, 200
-#
-#     def get_me(self, ):
-#         """
-#         GET /api/users/me
-#         HTTP-Params:
-#         api-key: str
-#         """
-#         self_id = 1
-#         data = User.get_user(self_id)
-#
-#         follower = Follow.get_follower(self_id)
-#         following = Follow.get_following(self_id)
-#
-#         response = {
-#             "result": True,
-#             "user": data
-#         }
-#         response["user"].update({"followers": follower})
-#         response["user"].update({"following": following})
-#         return response, 200
+class UserApi:
+    @router.get('/api/users/{id}')
+    async def get_user_id(
+            self, id: int,
+    ):
+        """
+        GET /api/users/<id>
+        Пользователь может получить информацию о произвольном
+         профиле по его id:
+        """
+
+        user_exist = get_user(id)
+
+        follower = get_follower(id)
+        following = get_following(id)
+
+        if user_exist:
+            response = {
+                "result": True,
+                "user": user_exist
+            }
+            response["user"].update({"followers": follower})
+            response["user"].update({"following": following})
+        else:
+            response = {
+                "result": False,
+                #     "error_type": e,
+                #     "error_message": e.messages,
+            }
+            return response, 400
+        return response, 200
+
+    @router.get('/api/users/me')
+    async def get_user_me(self):
+        """
+        GET /api/users/me
+        HTTP-Params:
+        api-key: str
+        """
+        self_id = 1
+        data = get_user(self_id)
+
+        follower = get_follower(self_id)
+        following = get_following(self_id)
+
+        response = {
+            "result": True,
+            "user": data
+        }
+        response["user"].update({"followers": follower})
+        response["user"].update({"following": following})
+        return response, 200
 #
 #     def post(self, id: int):
 #         """

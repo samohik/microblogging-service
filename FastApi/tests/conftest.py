@@ -2,6 +2,8 @@ import asyncio
 from typing import AsyncGenerator
 
 import pytest
+from fastapi import FastAPI
+from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     create_async_engine,
@@ -10,7 +12,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
 from FastApi.models import User, Follow, Tweet, Like
-from FastApi.database import Base
+from FastApi.database import Base, get_db
+from main import app
 
 TEST_DATABASE = "sqlite+aiosqlite:///./test_app.db"
 
@@ -49,6 +52,21 @@ async def async_db():
     async with test_async_session() as session:
         preloaded_data(session)
         yield session
+
+
+app.dependency_overrides[get_db] = override_get_async_session
+
+
+@pytest.fixture(scope="function")
+def app(async_db):
+    app = FastAPI()
+    yield app
+
+
+@pytest.fixture(scope="function")
+async def client(async_db):
+    async with AsyncClient(app=app, base_url="http://testserver") as client:
+        yield client
 
 
 def preloaded_data(session):

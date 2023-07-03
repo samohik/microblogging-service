@@ -1,12 +1,6 @@
 from Flask.models import Follow
 
 
-# def test_app_config(app):
-#     assert not app.config["DEBUG"]
-#     assert app.config["TESTING"]
-#     assert app.config["SQLALCHEMY_DATABASE_URI"] == "sqlite:///test.db"
-#
-#
 # class TestTweetsApi:
 #     def test_get(self, client, db):
 #         response = client.get('/api/tweets')

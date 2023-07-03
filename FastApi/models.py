@@ -1,7 +1,14 @@
 from datetime import datetime
 from typing import List, Dict, Any
 
-from sqlalchemy import *
+from sqlalchemy import (
+    Integer,
+    Column,
+    String,
+    ForeignKey,
+    DateTime,
+    BLOB
+)
 from sqlalchemy.orm import relationship, backref
 
 from FastApi.database import Base, get_db

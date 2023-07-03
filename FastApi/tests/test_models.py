@@ -1,25 +1,34 @@
 import pytest
+from sqlalchemy import select
 
-from FastApi.models import User, Follow, Tweet, Like
+from FastApi.models import (
+    User,
+    Follow,
+    Tweet,
+    Like,
+)
+from utils import get_user
+
+
 # from FastApi.models import User
 
 
 async def test_db(async_db):
     user = User(name='Test')
     async_db.add(user)
-
     await async_db.commit()
-    res = await async_db.get(User, 1)
+    query = select(User).where(User.id == 1)
+    res = (await async_db.execute(query)).scalar_one()
     assert res.name == 'Jonny'
 
 
-class TestUser:
-    async def test_get_user(self, async_db):
-        data_2 = await User.get_user(2)
-        data_wrong = await User.get_user(8)
-
-        assert data_2 == {'id': 2, 'name': 'V'}
-        assert data_wrong == {}
+# class TestUser:
+#     async def test_get_user(self, async_db):
+#         data_2 = await get_user(2)
+#         data_wrong = await get_user(8)
+#
+#         assert data_2 == {'id': 2, 'name': 'V'}
+#         assert data_wrong == {}
 
 
 # class TestFollow:

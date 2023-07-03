@@ -21,3 +21,11 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         await conn.run_sync(Base.metadata.create_all)
     async with async_session() as session:
         yield session
+
+
+# async def get_db() -> AsyncGenerator[AsyncSession, None]:
+#     try:
+#         session: AsyncSession = async_session()
+#         yield session
+#     finally:
+#         await session.close()
