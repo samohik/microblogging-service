@@ -20,15 +20,11 @@ async_session = sessionmaker(
 )
 
 
-async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+async def create_db_and_tables():
     async with engine.begin() as conn:
-        task = asyncio.create_task(conn.run_sync(Base.metadata.create_all))
+        await conn.run_sync(Base.metadata.create_all)
 
-        await task
+
+async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session() as session:
         yield session
-
-
-# async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
-#     async with async_session() as session:
-#         yield session.close()

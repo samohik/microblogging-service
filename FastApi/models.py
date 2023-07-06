@@ -17,7 +17,7 @@ from sqlalchemy import (
     BLOB
 )
 from sqlalchemy.orm import relationship, backref
-from database import Base, get_async_session
+from database import Base
 
 
 class User(Base):
@@ -31,11 +31,11 @@ class User(Base):
 
     @classmethod
     async def get_user(
-            cls, id=1,
-            session: AsyncSession = get_async_session()  # todo
+            cls,
+            session: AsyncSession,
+            id=1,
     ) -> dict[str, Any]:
-        query = await session.execute(select(User).where(User.id == id))
-        data = query.all()
+        data = await session.get(cls, id)
         result = {}
         if data:
             result['id'] = data.id
@@ -63,40 +63,56 @@ class Follow(Base):
     def __repr__(self):
         return "Follower: {}\nFollowing: {}".format(self.to_user_id, self.from_user_id)
 
-    # @classmethod
-    # async def get_follow(cls, from_user, to_user):
-    #     data = await db.query(Follow).filter(
-    #         Follow.to_user_id == to_user,
-    #         Follow.from_user_id == from_user,
-    #     ).first()
-    #     result = {}
-    #     if data:
-    #         result["to"] = data.to_user.id
-    #         result["from"] = data.from_user.id
-    #     return result
-    #
-    # @classmethod
-    # async def get_follower(cls, id=1) -> List[Dict]:
-    #     data = await db.query(Follow).filter(Follow.to_user_id == id)
-    #     result = []
-    #     if data:
-    #         result = [
-    #             {'id': x.from_user.id, 'name': x.from_user.name}
-    #             for x in data
-    #         ]
-    #     return result
-    #
-    # @classmethod
-    # async def get_following(cls, id=1) -> List[Dict]:
-    #     data = await db.query(Follow).filter(Follow.from_user_id == id)
-    #     result = []
-    #     if data:
-    #         result = [
-    #             {'id': x.to_user.id, 'name': x.to_user.name}
-    #             for x in data
-    #         ]
-    #     return result
-    #
+    @classmethod
+    async def get_follow(
+            cls,
+            session: AsyncSession,
+            from_user,
+            to_user,
+    ):
+        query = select(cls).where(
+            cls.to_user_id == to_user,
+            cls.from_user_id == from_user,
+        )
+        data = (await session.execute(query)).scalar_one()
+        result = {}
+        if data:
+            result["to"] = data.to_user.id
+            result["from"] = data.from_user.id
+        return result
+
+    @classmethod
+    async def get_follower(
+            cls,
+            session: AsyncSession,
+            id=1,
+    ) -> List[Dict]:
+        query = select(cls).where(cls.to_user_id == id)
+        data = (await session.execute(query)).scalars().all()
+        result = []
+        if data:
+            result = [
+                {'id': x.from_user.id, 'name': x.from_user.name}
+                for x in data
+            ]
+        return result
+
+    @classmethod
+    async def get_following(
+            cls,
+            session: AsyncSession,
+            id=1
+    ) -> List[Dict]:
+        query = select(cls).where(cls.from_user_id == id)
+        data = (await session.execute(query)).scalars().all()
+        result = []
+        if data:
+            result = [
+                {'id': x.to_user.id, 'name': x.to_user.name}
+                for x in data
+            ]
+        return result
+
     # @classmethod
     # async def handler_follower(cls, method: str, to_user_id=4, from_user_id=1, ) -> bool:
     #     result = False

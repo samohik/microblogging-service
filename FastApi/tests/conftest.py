@@ -31,6 +31,7 @@ test_async_session = sessionmaker(
 metadata.bind = engine_test
 
 
+@pytest.fixture(scope="function")
 async def override_get_async_session() -> AsyncGenerator[AsyncSession, None]:
     async with test_async_session() as session:
         yield session
@@ -48,7 +49,6 @@ async def prepare_database():
         await conn.run_sync(Base.metadata.drop_all)
 
 
-# SETUP
 @pytest.fixture(scope='session')
 def event_loop(request):
     """Create an instance of the default event loop for each test case."""

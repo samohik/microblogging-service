@@ -1,6 +1,4 @@
-import pytest
 from sqlalchemy import select
-
 from models import (
     User,
     Follow,
@@ -13,37 +11,56 @@ async def test_db(async_db):
     user = User(name='Test')
     async_db.add(user)
     await async_db.commit()
-    query = (await async_db.execute(select(User).where(User.id == 1)))
-    res = query.scalar_one()
-    assert res.name == 'Jonny'
-    # assert res.name == 'Test'
+    res1 = await async_db.get(User, 1)
+    assert res1.name == 'Jonny'
+
+    query = await async_db.execute(select(User).where(User.name == 'Test'))
+    res2 = query.scalar_one()
+    assert res2.name == 'Test'
 
 
 class TestUser:
     async def test_get_user(self, async_db):
-        data_2 = await User.get_user(2)
-        data_wrong = await User.get_user(8)
-
+        data_2 = await User.get_user(
+            id=2,
+            session=async_db,
+        )
+        data_wrong = await User.get_user(
+            id=8,
+            session=async_db,
+        )
         assert data_2 == {'id': 2, 'name': 'V'}
         assert data_wrong == {}
 
 
-# class TestFollow:
-#     def test_get_follower_exist(self, db):
-#         result = Follow.get_follow(from_user=1, to_user=2)
-#         assert result == {'from': 1, 'to': 2}
-#
-#     def test_get_follower_dont_exist(self, db):
-#         result = Follow.get_follow(from_user=1, to_user=4)
-#         assert result == {}
-#
-#     def test_get_follower(self, db):
-#         data = Follow.get_follower()
-#         assert data == [{'id': 3, 'name': 'Alt'}]
-#
-#     def test_get_following(self, db):
-#         data = Follow.get_following()
-#         assert data == [{'id': 2, 'name': 'V'}]
+class TestFollow:
+    async def test_get_follower_exist(self, async_db):
+        result = await Follow.get_follow(
+            session=async_db,
+            from_user=1,
+            to_user=2
+        )
+        assert result == {'from': 1, 'to': 2}
+
+    async def test_get_follower_dont_exist(self, async_db):
+        result = await Follow.get_follow(
+            session=async_db,
+            from_user=1,
+            to_user=4
+        )
+        assert result == {}
+
+    async def test_get_follower(self, async_db):
+        data = await Follow.get_follower(
+            session=async_db,
+        )
+        assert data == [{'id': 3, 'name': 'Alt'}]
+
+    async def test_get_following(self, async_db):
+        data = await Follow.get_following(
+            session=async_db,
+        )
+        assert data == [{'id': 2, 'name': 'V'}]
 #
 #     def test_add_follower(self, db):
 #         data = Follow.handler_follower(
