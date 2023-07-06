@@ -16,7 +16,7 @@ from sqlalchemy import (
     DateTime,
     BLOB
 )
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship, backref, selectinload
 from database import Base
 
 
@@ -73,8 +73,12 @@ class Follow(Base):
         query = select(cls).where(
             cls.to_user_id == to_user,
             cls.from_user_id == from_user,
+        ).options(
+            selectinload(cls.to_user),
+            selectinload(cls.from_user),
         )
-        data = (await session.execute(query)).scalar_one()
+        data = (await session.execute(query)).scalars().first()
+        print(data)
         result = {}
         if data:
             result["to"] = data.to_user.id
@@ -87,7 +91,12 @@ class Follow(Base):
             session: AsyncSession,
             id=1,
     ) -> List[Dict]:
-        query = select(cls).where(cls.to_user_id == id)
+        query = select(cls).where(
+            cls.to_user_id == id
+        ).options(
+            selectinload(cls.to_user),
+            selectinload(cls.from_user),
+        )
         data = (await session.execute(query)).scalars().all()
         result = []
         if data:
@@ -103,7 +112,12 @@ class Follow(Base):
             session: AsyncSession,
             id=1
     ) -> List[Dict]:
-        query = select(cls).where(cls.from_user_id == id)
+        query = select(cls).where(
+            cls.from_user_id == id
+        ).options(
+            selectinload(cls.to_user),
+            selectinload(cls.from_user),
+        )
         data = (await session.execute(query)).scalars().all()
         result = []
         if data:
@@ -113,39 +127,65 @@ class Follow(Base):
             ]
         return result
 
-    # @classmethod
-    # async def handler_follower(cls, method: str, to_user_id=4, from_user_id=1, ) -> bool:
-    #     result = False
-    #     user_exist = User.get_user(to_user_id)
-    #     if user_exist:
-    #         already_exist = await db.query(Follow).filter(
-    #             Follow.to_user_id == to_user_id,
-    #             Follow.from_user_id == from_user_id,
-    #         ).first()
-    #         if method == "POST" and not already_exist:
-    #             result = await Follow.add_follower(
-    #                 to_user_id=to_user_id,
-    #                 from_user_id=from_user_id,
-    #             )
-    #         elif method == "DELETE" and already_exist:
-    #             result = await Follow.delete_follower(already_exist)
-    #     return result
+    @classmethod
+    async def handler_follower(
+            cls,
+            session: AsyncSession,
+            method: str,
+            to_user_id=4,
+            from_user_id=1,
+    ) -> bool:
+        result = False
+        user_exist = await User.get_user(
+            id=to_user_id,
+            session=session,
+        )
+        if user_exist:
+            query = select(cls).filter(
+                cls.to_user_id == to_user_id,
+                cls.from_user_id == from_user_id,
+            ).options(
+                selectinload(cls.to_user),
+                selectinload(cls.from_user),
+            )
+            already_exist = (await session.execute(query)).scalars().first()
+            if method == "POST" and not already_exist:
+                result = await Follow.add_follower(
+                    session=session,
+                    to_user_id=to_user_id,
+                    from_user_id=from_user_id,
+                )
+            elif method == "DELETE" and already_exist:
+                result = await Follow.delete_follower(
+                    session=session,
+                    item=already_exist,
+                )
+        return result
 
-    # @classmethod
-    # async def add_follower(cls, to_user_id, from_user_id):
-    #     follower = Follow(
-    #         to_user_id=to_user_id,
-    #         from_user_id=from_user_id,
-    #     )
-    #     db.add(follower)
-    #     await db.commit()
-    #     return True
+    @classmethod
+    async def add_follower(
+            cls,
+            session: AsyncSession,
+            to_user_id,
+            from_user_id
+    ):
+        follower = Follow(
+            to_user_id=to_user_id,
+            from_user_id=from_user_id,
+        )
+        session.add(follower)
+        await session.commit()
+        return True
 
-    # @classmethod
-    # async def delete_follower(cls, item):
-    #     db.delete(item)
-    #     await db.commit()
-    #     return True
+    @classmethod
+    async def delete_follower(
+            cls,
+            session: AsyncSession,
+            item,
+    ):
+        await session.delete(item)
+        await session.commit()
+        return True
 
 
 class Like(Base):
@@ -181,49 +221,81 @@ class Like(Base):
     def __str__(self):
         return str(self.id)
 
-    # @classmethod
-    # async def get_like(cls, user_id: int, tweet_id: int) -> Any | bool:
-    #     res = await db.query(Like).filter(
-    #         Like.user_id == user_id,
-    #         Like.tweet_id == tweet_id,
-    #     ).first()
-    #     if res:
-    #         return res
-    #     return False
-    #
-    # @classmethod
-    # async def get_likes(cls, tweet_id: int) -> List:
-    #     res = await db.query(Like).filter(Like.tweet_id == tweet_id).all()
-    #     return res
-    #
-    # @classmethod
-    # async def add_like(cls, user_id: int, tweet_id: int) -> bool:
-    #     user = await User.get_user(user_id)
-    #     tweet = await Tweet.get_tweet(tweet_id)
-    #     if user and tweet:
-    #         like_exist = Like.get_like(
-    #             user_id=user_id,
-    #             tweet_id=tweet_id,
-    #         )
-    #         if not like_exist:
-    #             like = Like(
-    #                 user_id=user_id,
-    #                 tweet_id=tweet_id,
-    #             )
-    #             db.add(like)
-    #             await db.commit()
-    #             return True
-    #     return False
-    #
-    # @classmethod
-    # async def delete(cls, user_id: int, tweet_id: int) -> bool:
-    #
-    #     like = await Like.get_like(user_id, tweet_id)
-    #     if like:
-    #         db.delete(like)
-    #         await db.commit()
-    #         return True
-    #     return False
+    @classmethod
+    async def get_like(
+            cls,
+            session: AsyncSession,
+            user_id: int,
+            tweet_id: int
+    ) -> Any | bool:
+        query = select(cls).where(
+            cls.user_id == user_id,
+            cls.tweet_id == tweet_id,
+        )
+        res = (await session.execute(query)).scalars().first()
+        if res:
+            return res
+        return False
+
+    @classmethod
+    async def get_likes(
+            cls,
+            session: AsyncSession,
+            tweet_id: int
+    ) -> List:
+        query = select(cls).filter(cls.tweet_id == tweet_id)
+        res = (await session.execute(query)).scalars().all()
+        return res
+
+    @classmethod
+    async def add_like(
+            cls,
+            session: AsyncSession,
+            user_id: int,
+            tweet_id: int
+    ) -> bool:
+        user = await User.get_user(
+            session=session,
+            id=user_id,
+        )
+        tweet = await Tweet.get_tweet(
+            tweet_id=tweet_id,
+            session=session,
+        )
+        if user and tweet:
+            like_exist = cls.get_like(
+                session=session,
+                user_id=user_id,
+                tweet_id=tweet_id,
+            )
+            if not like_exist:
+                like = Like(
+                    user_id=user_id,
+                    tweet_id=tweet_id,
+                )
+                session.add(like)
+                await session.commit()
+                return True
+        return False
+
+    @classmethod
+    async def delete(
+            cls,
+            session: AsyncSession,
+            user_id: int,
+            tweet_id: int
+    ) -> bool:
+
+        like = await Like.get_like(
+            session=session,
+            user_id=user_id,
+            tweet_id=tweet_id,
+        )
+        if like:
+            await session.delete(like)
+            await session.commit()
+            return True
+        return False
 
 
 class Tweet(Base):
@@ -249,40 +321,65 @@ class Tweet(Base):
     def __repr__(self):
         return str(self.id)
 
-    # @classmethod
-    # async def get_tweet(cls, tweet_id: int) -> Any:
-    #     res = await db.get(Tweet, tweet_id)
-    #     return res
-    #
-    # @classmethod
-    # async def get_tweets(cls, user_id: int) -> List[Any, ]:
-    #     res = await db.query(Tweet).filter(
-    #         Tweet.user_id == user_id,
-    #     ).all()
-    #     return res
-    #
-    # @classmethod
-    # async def add_tweet(cls, user_id: int, content: str) -> Any | bool:
-    #     user = User.get_user(user_id)
-    #     if user:
-    #         tweet = Tweet(
-    #             content=content,
-    #             user_id=user_id,
-    #         )
-    #         db.add(tweet)
-    #         await db.flush()
-    #         return tweet
-    #     return False
-    #
-    # @classmethod
-    # def delete(cls, user_id: int, tweet_id: int) -> bool:
-    #     tweet = Tweet.get_tweet(tweet_id=tweet_id)
-    #     if tweet:
-    #         if tweet.user_id == user_id:
-    #             db.delete(tweet)
-    #             db.commit()
-    #             return True
-    #     return False
+    @classmethod
+    async def get_tweet(
+            cls,
+            session: AsyncSession,
+            tweet_id: int
+    ) -> Any:
+        res = await session.get(Tweet, tweet_id)
+        return res
+
+    @classmethod
+    async def get_tweets(
+            cls,
+            session: AsyncSession,
+            user_id: int
+    ) -> List[Any, ]:
+        query = select(cls).where(
+            Tweet.user_id == user_id,
+        )
+        res = (await session.execute(query)).scalars().first()
+        return res
+
+    @classmethod
+    async def add_tweet(
+            cls,
+            session: AsyncSession,
+            user_id: int,
+            content: str
+    ) -> Any | bool:
+        user = await User.get_user(
+            id=user_id,
+            session=session,
+        )
+        if user:
+            tweet = Tweet(
+                content=content,
+                user_id=user_id,
+            )
+            session.add(tweet)
+            await session.flush()
+            return tweet
+        return False
+
+    @classmethod
+    async def delete(
+            cls,
+            session: AsyncSession,
+            user_id: int,
+            tweet_id: int
+    ) -> bool:
+        tweet = await Tweet.get_tweet(
+            tweet_id=tweet_id,
+            session=session,
+        )
+        if tweet:
+            if tweet.user_id == user_id:
+                await session.delete(tweet)
+                await session.commit()
+                return True
+        return False
 
 
 class Media(Base):

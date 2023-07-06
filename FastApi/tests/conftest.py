@@ -137,3 +137,9 @@ async def preloaded_data(session: AsyncSession):
         user_id=user_id_4.id,
         tweet_id=tweet_me.id,
     )
+    session.add(like_to_user_2)
+    session.add(like_from_user_2)
+    session.add(like_from_user_4)
+    await session.commit()
+
+

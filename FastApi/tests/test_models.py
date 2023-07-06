@@ -61,77 +61,103 @@ class TestFollow:
             session=async_db,
         )
         assert data == [{'id': 2, 'name': 'V'}]
-#
-#     def test_add_follower(self, db):
-#         data = Follow.handler_follower(
-#             to_user_id=4,
-#             from_user_id=1,
-#             method="POST",
-#         )
-#         result = Follow.get_follow(from_user=1, to_user=4)
-#         assert data is True
-#         assert result == {"to": 4, "from": 1}
-#
-#     def test_delete_follower(self, db):
-#         result = Follow.get_follow(from_user=1, to_user=2)
-#         data = Follow.handler_follower(
-#             to_user_id=2,
-#             from_user_id=1,
-#             method="DELETE",
-#         )
-#         assert result == {"to": 2, "from": 1}
-#         assert data is True
-#
-#
-# class TestTweet:
-#     def test_get(self, db):
-#         result = Tweet.get_tweet(1)
-#         assert result.id == 1
-#
-#     def test_add(self, db):
-#         content = 'Test'
-#         result = Tweet.add_tweet(1, content)
-#         assert result.id == 3
-#
-#     def test_delete(self, db):
-#         result = Tweet.delete(
-#             user_id=1,
-#             tweet_id=1
-#         )
-#         assert result is True
-#         result = Tweet.delete(
-#             user_id=1,
-#             tweet_id=2
-#         )
-#         assert result is False
-#
-#
-# class TestLike:
-#     def test_get(self, db):
-#         data = Like.get_likes(1)
-#         result = [x.id for x in data]
-#         assert result == [2, 3, ]
-#
-#     def test_add(self, db):
-#         result = Like.add_like(
-#             tweet_id=1,
-#             user_id=3,
-#         )
-#         assert result is True
-#         result = Like.add_like(
-#             tweet_id=1,
-#             user_id=2,
-#         )
-#         assert result is False
-#
-#     def test_delete(self, db):
-#         result = Like.delete(
-#             tweet_id=1,
-#             user_id=2,
-#         )
-#         assert result is True
-#         result = Like.delete(
-#             tweet_id=1,
-#             user_id=3,
-#         )
-#         assert result is False
+
+    async def test_add_follower(self, async_db):
+        data = await Follow.handler_follower(
+            session=async_db,
+            to_user_id=4,
+            from_user_id=1,
+            method="POST",
+        )
+        result = await Follow.get_follow(
+            session=async_db,
+            from_user=1,
+            to_user=4,
+        )
+        assert data is True
+        assert result == {"to": 4, "from": 1}
+
+    async def test_delete_follower(self, async_db):
+        result = await Follow.get_follow(
+            session=async_db,
+            from_user=1,
+            to_user=2
+        )
+        data = await Follow.handler_follower(
+            session=async_db,
+            to_user_id=2,
+            from_user_id=1,
+            method="DELETE",
+        )
+        assert result == {"to": 2, "from": 1}
+        assert data is True
+
+
+class TestTweet:
+    async def test_get(self, async_db):
+        result = await Tweet.get_tweet(
+            tweet_id=1,
+            session=async_db,
+        )
+        assert result.id == 1
+
+    async def test_add(self, async_db):
+        content = 'Test'
+        result = await Tweet.add_tweet(
+            session=async_db,
+            user_id=1,
+            content=content,
+        )
+        assert result.id == 3
+
+    async def test_delete(self, async_db):
+        result = await Tweet.delete(
+            user_id=1,
+            tweet_id=1,
+            session=async_db,
+        )
+        assert result is True
+        result = await Tweet.delete(
+            user_id=1,
+            tweet_id=2,
+            session=async_db,
+        )
+        assert result is False
+
+
+class TestLike:
+    async def test_get(self, async_db):
+        data = await Like.get_likes(
+            tweet_id=1,
+            session=async_db,
+        )
+        result = [x.id for x in data]
+        assert result == [2, 3, ]
+
+    async def test_add(self, async_db):
+        result1 = await Like.add_like(
+            session=async_db,
+            tweet_id=1,
+            user_id=3,
+        )
+        assert result1 is True  # todo test_add = True
+        result2 = await Like.add_like(
+            session=async_db,
+            tweet_id=1,
+            user_id=2,
+        )
+        assert result2 is False
+
+    async def test_delete(self, async_db):
+        result1 = await Like.delete(
+            session=async_db,
+            tweet_id=1,
+            user_id=2,
+        )
+        assert result1 is True
+        result2 = await Like.delete(
+            session=async_db,
+            tweet_id=1,
+            user_id=3,
+        )
+        assert result2 is False
