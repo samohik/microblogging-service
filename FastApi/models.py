@@ -228,9 +228,9 @@ class Like(Base):
             user_id: int,
             tweet_id: int
     ) -> Any | bool:
-        query = select(cls).where(
-            cls.user_id == user_id,
-            cls.tweet_id == tweet_id,
+        query = select(Like).where(
+            Like.user_id == user_id,
+            Like.tweet_id == tweet_id,
         )
         res = (await session.execute(query)).scalars().first()
         if res:
@@ -243,7 +243,7 @@ class Like(Base):
             session: AsyncSession,
             tweet_id: int
     ) -> List:
-        query = select(cls).filter(cls.tweet_id == tweet_id)
+        query = select(Like).filter(Like.tweet_id == tweet_id)
         res = (await session.execute(query)).scalars().all()
         return res
 
@@ -263,7 +263,7 @@ class Like(Base):
             session=session,
         )
         if user and tweet:
-            like_exist = cls.get_like(
+            like_exist = await Like.get_like(
                 session=session,
                 user_id=user_id,
                 tweet_id=tweet_id,

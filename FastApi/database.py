@@ -9,7 +9,7 @@ from sqlalchemy.pool import NullPool
 # DATABASE_URL = (
 #     f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 # )
-DATABASE_URL = "sqlite+aiosqlite:///./FastApi/app.db"
+DATABASE_URL = "sqlite+aiosqlite:///./app.db"
 
 Base = declarative_base()
 metadata = MetaData()

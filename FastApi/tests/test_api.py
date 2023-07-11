@@ -1,54 +1,52 @@
-from Flask.models import Follow
+
+class TestTweetsApi:
+    async def test_get(self, client, async_db):
+        response = await client.get('/api/tweets')
+        result = {
+            'result': True,
+            'tweets': [
+                {
+                    'attachments': [],
+                    'author': {'id': 1, 'name': 'str'},  # TODO Tweet test_get author
+                    'content': 'Test',
+                    'id': 1,
+                    'likes': [
+                        {'name': 'V', 'user_id': 2},
+                        {'name': 'Jade', 'user_id': 4}
+                    ]
+                }
+            ]
+        }
+        assert response.status_code == 200
+        assert response.json() == result
+
+    async def test_post(self, client, async_db):
+        response = await client.post('/api/tweets', json={
+            "tweet_data": "Test"
+        })
+        result = {'result': True, 'tweet_id': 3}
+        assert response.status_code == 201
+        assert response.json() == result
+
+    # async def test_delete(self, client, async_db):
+    #     response = await client.delete("/api/tweets/1")
+    #     assert response.status_code == 204
+    #     response = await client.delete("/api/tweets/3")
+    #     assert response.status_code == 400
+
+    async def test_post_likes(self, client, async_db):
+        response = await client.post("/api/tweets/1/likes")
+        result = {"result": True}
+        assert response.status_code == 201
+        assert response.json() == result
+
+    # async def test_delete_likes(self, client, async_db):
+    #     response = await client.delete("/api/tweets/1/likes")
+    #     assert response.status_code == 400
+    #     response = await client.delete("/api/tweets/2/likes")
+    #     assert response.status_code == 204
 
 
-# class TestTweetsApi:
-#     def test_get(self, client, db):
-#         response = client.get('/api/tweets')
-#         result = {
-#             'result': True,
-#             'tweets': [
-#                 {
-#                     'attachments': [],
-#                     'author': {'id': 1, 'name': 'str'},  # TODO Tweet test_get author
-#                     'content': 'Test',
-#                     'id': 1,
-#                     'likes': [
-#                         {'name': 'V', 'user_id': 2},
-#                         {'name': 'Jade', 'user_id': 4}
-#                     ]
-#                 }
-#             ]
-#         }
-#         assert response.status_code == 200
-#         assert response.json == result
-#
-#     def test_post(self, client, db):
-#         response = client.post('/api/tweets', json={
-#             "tweet_data": "Test"
-#         })
-#         result = {'result': True, 'tweet_id': 3}
-#         assert response.status_code == 201
-#         assert response.json == result
-#
-#     def test_delete(self, client, db):
-#         response = client.delete("/api/tweets/1")
-#         assert response.status_code == 204
-#         response = client.delete("/api/tweets/3")
-#         assert response.status_code == 400
-#
-#     def test_post_likes(self, client):
-#         response = client.post("/api/tweets/1/likes")
-#         result = {"result": True}
-#         assert response.status_code == 201
-#         assert response.json == result
-#
-#     def test_delete_likes(self, client):
-#         response = client.delete("/api/tweets/1/likes")
-#         assert response.status_code == 400
-#         response = client.delete("/api/tweets/2/likes")
-#         assert response.status_code == 204
-#
-#
 # class TestMediaApi:
 #     def test_post(self, client):
 #         # TODO media post

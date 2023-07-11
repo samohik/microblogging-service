@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     create_async_engine,
@@ -31,7 +32,6 @@ test_async_session = sessionmaker(
 metadata.bind = engine_test
 
 
-@pytest.fixture(scope="function")
 async def override_get_async_session() -> AsyncGenerator[AsyncSession, None]:
     async with test_async_session() as session:
         yield session
@@ -40,7 +40,7 @@ async def override_get_async_session() -> AsyncGenerator[AsyncSession, None]:
 app.dependency_overrides[get_async_session] = override_get_async_session
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=True, scope="function")
 async def prepare_database():
     async with engine_test.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -50,26 +50,23 @@ async def prepare_database():
 
 
 @pytest.fixture(scope='session')
-def event_loop(request):
+def event_loop():
     """Create an instance of the default event loop for each test case."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
+    loop = asyncio.get_event_loop()
     yield loop
     loop.close()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 async def async_db():
     async with test_async_session() as session:
         await preloaded_data(session)
         yield session
 
 
-client = TestClient(app)
-
-
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 async def client():
-    async with AsyncClient(app=app, base_url="http://testserver") as ac:
+    async with AsyncClient(app=app, base_url="http://127.0.0.1") as ac:
         yield ac
 
 

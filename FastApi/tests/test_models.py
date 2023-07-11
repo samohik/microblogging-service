@@ -1,4 +1,7 @@
+import pytest
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from models import (
     User,
     Follow,
@@ -20,6 +23,30 @@ async def test_db(async_db):
 
 
 class TestUser:
+    # async def async_setup_method(
+    #         self,
+    #         async_db: AsyncSession
+    # ):
+    #     user_me = User(name="Jonny")
+    #     user_id_2 = User(
+    #         name="V",
+    #     )
+    #     user_id_3 = User(
+    #         name="Alt",
+    #     )
+    #     user_id_4 = User(
+    #         name="Jade",
+    #     )
+    #     async_db.add(user_me)
+    #     async_db.add(user_id_2)
+    #     async_db.add(user_id_3)
+    #     async_db.add(user_id_4)
+    #     await async_db.flush()
+
+        # yield
+
+        # await async_db.close()
+
     async def test_get_user(self, async_db):
         data_2 = await User.get_user(
             id=2,
@@ -127,6 +154,7 @@ class TestTweet:
 
 class TestLike:
     async def test_get(self, async_db):
+
         data = await Like.get_likes(
             tweet_id=1,
             session=async_db,
@@ -140,7 +168,7 @@ class TestLike:
             tweet_id=1,
             user_id=3,
         )
-        assert result1 is True  # todo test_add = True
+        assert result1 is True
         result2 = await Like.add_like(
             session=async_db,
             tweet_id=1,
