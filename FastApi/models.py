@@ -33,7 +33,7 @@ class User(Base):
     async def get_user(
             cls,
             session: AsyncSession,
-            id=1,
+            id: int,
     ) -> dict[str, Any]:
         data = await session.get(cls, id)
         result = {}
@@ -67,8 +67,8 @@ class Follow(Base):
     async def get_follow(
             cls,
             session: AsyncSession,
-            from_user,
-            to_user,
+            from_user: int,
+            to_user: int,
     ):
         query = select(cls).where(
             cls.to_user_id == to_user,
@@ -89,7 +89,7 @@ class Follow(Base):
     async def get_follower(
             cls,
             session: AsyncSession,
-            id=1,
+            id: int,
     ) -> List[Dict]:
         query = select(cls).where(
             cls.to_user_id == id
@@ -110,7 +110,7 @@ class Follow(Base):
     async def get_following(
             cls,
             session: AsyncSession,
-            id=1
+            id: int,
     ) -> List[Dict]:
         query = select(cls).where(
             cls.from_user_id == id
@@ -132,8 +132,8 @@ class Follow(Base):
             cls,
             session: AsyncSession,
             method: str,
-            to_user_id=4,
-            from_user_id=1,
+            to_user_id: int = 4,
+            from_user_id: int = 1,
     ) -> bool:
         result = False
         user_exist = await User.get_user(
@@ -141,12 +141,12 @@ class Follow(Base):
             session=session,
         )
         if user_exist:
-            query = select(cls).filter(
-                cls.to_user_id == to_user_id,
-                cls.from_user_id == from_user_id,
+            query = select(Follow).filter(
+                Follow.to_user_id == to_user_id,
+                Follow.from_user_id == from_user_id,
             ).options(
-                selectinload(cls.to_user),
-                selectinload(cls.from_user),
+                selectinload(Follow.to_user),
+                selectinload(Follow.from_user),
             )
             already_exist = (await session.execute(query)).scalars().first()
             if method == "POST" and not already_exist:
@@ -231,6 +231,9 @@ class Like(Base):
         query = select(Like).where(
             Like.user_id == user_id,
             Like.tweet_id == tweet_id,
+        ).options(
+            selectinload(cls.tweet_backref),
+            selectinload(cls.user_backref),
         )
         res = (await session.execute(query)).scalars().first()
         if res:
@@ -243,7 +246,12 @@ class Like(Base):
             session: AsyncSession,
             tweet_id: int
     ) -> List:
-        query = select(Like).filter(Like.tweet_id == tweet_id)
+        query = select(Like).filter(
+            Like.tweet_id == tweet_id
+        ).options(
+            selectinload(cls.user_backref),
+            selectinload(cls.tweet_backref),
+        )
         res = (await session.execute(query)).scalars().all()
         return res
 
@@ -339,7 +347,7 @@ class Tweet(Base):
         query = select(cls).where(
             Tweet.user_id == user_id,
         )
-        res = (await session.execute(query)).scalars().first()
+        res = (await session.execute(query)).scalars().all()
         return res
 
     @classmethod

@@ -1,4 +1,4 @@
-from Flask.models import Follow
+from models import Follow
 
 
 def test_app_config(app):

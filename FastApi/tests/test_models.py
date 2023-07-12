@@ -80,12 +80,14 @@ class TestFollow:
     async def test_get_follower(self, async_db):
         data = await Follow.get_follower(
             session=async_db,
+            id=1
         )
         assert data == [{'id': 3, 'name': 'Alt'}]
 
     async def test_get_following(self, async_db):
         data = await Follow.get_following(
             session=async_db,
+            id=1
         )
         assert data == [{'id': 2, 'name': 'V'}]
 

@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
-from routers import tweet
+from routers import tweet, user
 from database import Base, engine
 
 
@@ -21,12 +21,9 @@ async def shutdown():
 app.include_router(
     tweet.router
 )
-# app.include_router(
-#     user.router
-# )
-# app.include_router(
-#     like.router
-# )
+app.include_router(
+    user.router
+)
 # app.include_router(
 #     media.router
 # )

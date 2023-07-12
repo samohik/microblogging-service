@@ -1,14 +1,16 @@
-from fastapi import Depends
+from fastapi import Depends, APIRouter, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from starlette.responses import JSONResponse
 from database import get_async_session
-from main import router
 from models import User, Follow
+
+
+router = APIRouter()
 
 
 @router.get('/api/users/{id}')
 async def get_user_id(
-         id: int,
+        id: int,
         session: AsyncSession = Depends(get_async_session),
 ):
     """
@@ -16,11 +18,24 @@ async def get_user_id(
     Пользователь может получить информацию о произвольном
      профиле по его id:
     """
+    user_exist = await User.get_user(
+        id=id,
+        session=session
+    )
 
-    user_exist = User.get_user(id)
-
-    follower = Follow.get_follower(id)
-    following = Follow.get_following(id)
+    follower = await Follow.get_follower(
+        id=id,
+        session=session
+    )
+    following = await Follow.get_following(
+        id=id,
+        session=session
+    )
+    response = {
+        "result": False,
+        #     "error_type": e,
+        #     "error_message": e.messages,
+    }
 
     if user_exist:
         response = {
@@ -29,29 +44,39 @@ async def get_user_id(
         }
         response["user"].update({"followers": follower})
         response["user"].update({"following": following})
-    else:
-        response = {
-            "result": False,
-            #     "error_type": e,
-            #     "error_message": e.messages,
-        }
-        return response, 400
-    return response, 200
+        return JSONResponse(response, status_code=200)
+
+    return JSONResponse(response, status_code=400)
+
 
 @router.get('/api/users/me')
 async def get_user_me(
-        session: AsyncSession = Depends(get_async_session)
+        request: Request,
+        session: AsyncSession = Depends(get_async_session),
 ):
     """
     GET /api/users/me
     HTTP-Params:
     api-key: str
     """
-    self_id = 1
-    data = User.get_user(self_id)
 
-    follower = Follow.get_follower(self_id)
-    following = Follow.get_following(self_id)
+    self_id = request.headers.get('api-key')
+    if not self_id:
+        self_id = 1
+
+    data = await User.get_user(
+        id=self_id,
+        session=session,
+    )
+
+    follower = await Follow.get_follower(
+        id=self_id,
+        session=session,
+    )
+    following = await Follow.get_following(
+        id=self_id,
+        session=session
+    )
 
     response = {
         "result": True,
@@ -59,12 +84,13 @@ async def get_user_me(
     }
     response["user"].update({"followers": follower})
     response["user"].update({"following": following})
-    return response, 200
+    return JSONResponse(response, status_code=200)
 
-def post(
+
+@router.post('/api/users/{id}/follow')
+async def post(
         id: int,
-    session: AsyncSession = Depends(get_async_session),
-
+        session: AsyncSession = Depends(get_async_session),
 ):
     """
     POST /api/users/<id>/follow
@@ -75,21 +101,24 @@ def post(
         “result”: true
     }
     """
-    result = Follow.handler_follower(
+    result = await Follow.handler_follower(
         from_user_id=1,
         to_user_id=id,
-        method="POST"
+        method="POST",
+        session=session,
     )
-    response = {
+    data = {
         "result": False,
         #     "error_type": e,
         #     "error_message": e.messages,
     }
     if result:
-        response = {"result": True}
-    return response, 201
+        data = {"result": True}
+    return JSONResponse(data, status_code=201)
 
-def delete(
+
+@router.delete('/api/users/{id}/follow')
+async def delete(
         id: int,
         session: AsyncSession = Depends(get_async_session)
 ):
@@ -101,16 +130,17 @@ def delete(
         “result”: true
     }
     """
-    result = Follow.handler_follower(
+    result = await Follow.handler_follower(
         from_user_id=1,
         to_user_id=id,
         method="DELETE",
+        session=session,
     )
-    response = {
+    data = {
         "result": False,
         #     "error_type": e,
         #     "error_message": e.messages,
     }
     if result:
-        response = {"result": True}
-    return response, 204
+        data = {"result": True}
+    return JSONResponse(data, status_code=204)
