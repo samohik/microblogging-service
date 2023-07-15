@@ -10,14 +10,23 @@ router = APIRouter()
 
 @router.get('/api/users/{id}')
 async def get_user_id(
-        id: int,
+        id: int | str,
+        request: Request,
         session: AsyncSession = Depends(get_async_session),
 ):
     """
     GET /api/users/<id>
+    GET /api/users/me
     Пользователь может получить информацию о произвольном
      профиле по его id:
+    HTTP-Params:
+    api-key: str
     """
+    if id == 'me':
+        id = request.headers.get('api-key')
+        if not id:
+            id = 1
+
     user_exist = await User.get_user(
         id=id,
         session=session
@@ -47,44 +56,6 @@ async def get_user_id(
         return JSONResponse(response, status_code=200)
 
     return JSONResponse(response, status_code=400)
-
-
-@router.get('/api/users/me')
-async def get_user_me(
-        request: Request,
-        session: AsyncSession = Depends(get_async_session),
-):
-    """
-    GET /api/users/me
-    HTTP-Params:
-    api-key: str
-    """
-
-    self_id = request.headers.get('api-key')
-    if not self_id:
-        self_id = 1
-
-    data = await User.get_user(
-        id=self_id,
-        session=session,
-    )
-
-    follower = await Follow.get_follower(
-        id=self_id,
-        session=session,
-    )
-    following = await Follow.get_following(
-        id=self_id,
-        session=session
-    )
-
-    response = {
-        "result": True,
-        "user": data
-    }
-    response["user"].update({"followers": follower})
-    response["user"].update({"following": following})
-    return JSONResponse(response, status_code=200)
 
 
 @router.post('/api/users/{id}/follow')

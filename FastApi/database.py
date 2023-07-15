@@ -1,4 +1,3 @@
-import asyncio
 from typing import AsyncGenerator
 
 from sqlalchemy import MetaData
