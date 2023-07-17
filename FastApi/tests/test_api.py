@@ -8,31 +8,34 @@ class TestTweetsApi:
             session=async_db,
         )
         assert result.id == 1
-        response = await client.get('/api/tweets')
+        response = await client.get("/api/tweets")
         result = {
-            'result': True,
-            'tweets': [
+            "result": True,
+            "tweets": [
                 {
-                    'attachments': [],
-                    'author': {'id': 1, 'name': 'str'},  # TODO Tweet test_get author
-                    'content': 'Test',
-                    'id': 1,
-                    'likes': [
-                        {'name': 'V', 'user_id': 2},
-                        {'name': 'Jade', 'user_id': 4}
-                    ]
+                    "attachments": [],
+                    "author": {"id": 1, "name": "str"},  # TODO Tweet test_get author
+                    "content": "Test",
+                    "id": 1,
+                    "likes": [
+                        {"name": "V", "user_id": 2},
+                        {"name": "Jade", "user_id": 4},
+                    ],
                 }
-            ]
+            ],
         }
         assert response.status_code == 200
         assert response.json() == result
 
     async def test_post(self, client, async_db):
-        response = await client.post('/api/tweets', json={
-            "tweet_data": "Test",
-            # "tweet_media_ids": [1, 2],
-        })
-        result = {'result': True, 'tweet_id': 3}
+        response = await client.post(
+            "/api/tweets",
+            json={
+                "tweet_data": "Test",
+                # "tweet_media_ids": [1, 2],
+            },
+        )
+        result = {"result": True, "tweet_id": 3}
         assert response.status_code == 201
         assert response.json() == result
 
@@ -73,7 +76,7 @@ class TestUserApi:
                 "id": 2,
                 "name": "V",
                 "followers": [{"id": 1, "name": "Jonny"}],
-                "following": [{'id': 4, 'name': 'Jade'}],
+                "following": [{"id": 4, "name": "Jade"}],
             },
         }
         assert response.status_code == 200
@@ -100,9 +103,9 @@ class TestUserApi:
             to_user=4,
             session=async_db,
         )
-        assert follower_exist == {'from': 1, 'to': 4}
+        assert follower_exist == {"from": 1, "to": 4}
         assert response.status_code == 201
-        assert response.json() == {'result': True}
+        assert response.json() == {"result": True}
 
     async def test_delete_follow(self, client, async_db):
         response = await client.delete("/api/users/2/follow")

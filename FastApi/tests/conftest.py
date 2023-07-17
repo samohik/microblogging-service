@@ -48,7 +48,7 @@ async def prepare_database():
         await conn.run_sync(Base.metadata.drop_all)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def event_loop():
     """Create an instance of the default event loop for each test case."""
     loop = asyncio.get_event_loop()
@@ -66,31 +66,19 @@ async def async_db():
 @pytest.fixture(scope="session")
 async def client():
     async with AsyncClient(app=app, base_url="http://127.0.0.1") as ac:
+        await ac.post('/auth/jwt/login', json={
+            "username": "asd123@gmail.com",
+            "password": "Test123",
+        })
         yield ac
 
 
 async def preloaded_data(session: AsyncSession):
     # Users
-    user_me = User(
-        name="Jonny",
-        email='asd123@gmail.com',
-        hashed_password='Test123'
-    )
-    user_id_2 = User(
-        name="V",
-        email='fsa231@gmail.com',
-        hashed_password='Test123'
-    )
-    user_id_3 = User(
-        name="Alt",
-        email='gewr2315@gmail.com',
-        hashed_password='Test123'
-    )
-    user_id_4 = User(
-        name="Jade",
-        email='qwet2314@gmail.com',
-        hashed_password='Test123'
-    )
+    user_me = User(name="Jonny", email="asd123@gmail.com", hashed_password="Test123")
+    user_id_2 = User(name="V", email="fsa231@gmail.com", hashed_password="Test123")
+    user_id_3 = User(name="Alt", email="gewr2315@gmail.com", hashed_password="Test123")
+    user_id_4 = User(name="Jade", email="qwet2314@gmail.com", hashed_password="Test123")
     session.add(user_me)
     session.add(user_id_2)
     session.add(user_id_3)
@@ -115,11 +103,11 @@ async def preloaded_data(session: AsyncSession):
 
     # Tweet
     tweet_me = Tweet(
-        content='Test',
+        content="Test",
         user_id=user_me.id,
     )
     tweet_user_2 = Tweet(
-        content='Test2',
+        content="Test2",
         user_id=user_id_2.id,
     )
 
@@ -147,5 +135,3 @@ async def preloaded_data(session: AsyncSession):
     session.add(like_from_user_2)
     session.add(like_from_user_4)
     await session.commit()
-
-

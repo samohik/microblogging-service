@@ -48,11 +48,11 @@ def app():
 
         # Tweet
         tweet_me = Tweet(
-            content='Test',
+            content="Test",
             user_id=user_me.id,
         )
         tweet_user_2 = Tweet(
-            content='Test2',
+            content="Test2",
             user_id=user_id_2.id,
         )
 

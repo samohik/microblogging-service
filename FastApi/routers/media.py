@@ -6,10 +6,8 @@ from database import get_async_session
 router = APIRouter()
 
 
-@router.post('/api/medias')
-async def post_media(
-        session: AsyncSession = Depends(get_async_session)
-):
+@router.post("/api/medias")
+async def post_media(session: AsyncSession = Depends(get_async_session)):
     """
     POST /api/medias
     HTTP-Params:

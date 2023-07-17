@@ -55,11 +55,12 @@ def create_app():
                             "attachments": [],
                             "author": {
                                 "id": 1,
-                                "name": 'str',
+                                "name": "str",
                             },
                             "likes": [
-                                {"user_id": x.user_id, "name": x.user_backref.name} for x in likes
-                            ]
+                                {"user_id": x.user_id, "name": x.user_backref.name}
+                                for x in likes
+                            ],
                         }
                     )
             return response, 200
@@ -85,10 +86,10 @@ def create_app():
                 validated_data = schema.load(data)
             except ValidationError as e:
                 response["error_type"] = e
-                response["error_message"] = e.messages,
+                response["error_message"] = (e.messages,)
                 return response, 400
 
-            content = validated_data['tweet_data']
+            content = validated_data["tweet_data"]
             user_id = 1
 
             tweet = Tweet.add_tweet(
@@ -195,7 +196,6 @@ def create_app():
                 return super().dispatch_request(*args, **kwargs)
 
     class MediaApi(Resource):
-
         def post(self):
             """
             POST /api/medias
@@ -225,10 +225,7 @@ def create_app():
             following = Follow.get_following(id)
 
             if user_exist:
-                response = {
-                    "result": True,
-                    "user": user_exist
-                }
+                response = {"result": True, "user": user_exist}
                 response["user"].update({"followers": follower})
                 response["user"].update({"following": following})
             else:
@@ -240,7 +237,9 @@ def create_app():
                 return response, 400
             return response, 200
 
-        def get_me(self, ):
+        def get_me(
+            self,
+        ):
             """
             GET /api/users/me
             HTTP-Params:
@@ -252,10 +251,7 @@ def create_app():
             follower = Follow.get_follower(self_id)
             following = Follow.get_following(self_id)
 
-            response = {
-                "result": True,
-                "user": data
-            }
+            response = {"result": True, "user": data}
             response["user"].update({"followers": follower})
             response["user"].update({"following": following})
             return response, 200
@@ -271,9 +267,7 @@ def create_app():
             }
             """
             result = Follow.handler_follower(
-                from_user_id=1,
-                to_user_id=id,
-                method="POST"
+                from_user_id=1, to_user_id=id, method="POST"
             )
             response = {
                 "result": False,

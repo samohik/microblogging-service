@@ -6,14 +6,14 @@ class TestUser:
         data_2 = User.get_user(2)
         data_wrong = User.get_user(8)
 
-        assert data_2 == {'id': 2, 'name': 'V'}
+        assert data_2 == {"id": 2, "name": "V"}
         assert data_wrong == {}
 
 
 class TestFollow:
     def test_get_follower_exist(self, db):
         result = Follow.get_follow(from_user=1, to_user=2)
-        assert result == {'from': 1, 'to': 2}
+        assert result == {"from": 1, "to": 2}
 
     def test_get_follower_dont_exist(self, db):
         result = Follow.get_follow(from_user=1, to_user=4)
@@ -21,11 +21,11 @@ class TestFollow:
 
     def test_get_follower(self, db):
         data = Follow.get_follower()
-        assert data == [{'id': 3, 'name': 'Alt'}]
+        assert data == [{"id": 3, "name": "Alt"}]
 
     def test_get_following(self, db):
         data = Follow.get_following()
-        assert data == [{'id': 2, 'name': 'V'}]
+        assert data == [{"id": 2, "name": "V"}]
 
     def test_add_follower(self, db):
         data = Follow.handler_follower(
@@ -54,20 +54,14 @@ class TestTweet:
         assert result.id == 1
 
     def test_add(self, db):
-        content = 'Test'
+        content = "Test"
         result = Tweet.add_tweet(1, content)
         assert result.id == 3
 
     def test_delete(self, db):
-        result = Tweet.delete(
-            user_id=1,
-            tweet_id=1
-        )
+        result = Tweet.delete(user_id=1, tweet_id=1)
         assert result is True
-        result = Tweet.delete(
-            user_id=1,
-            tweet_id=2
-        )
+        result = Tweet.delete(user_id=1, tweet_id=2)
         assert result is False
 
 
@@ -75,7 +69,10 @@ class TestLike:
     def test_get(self, db):
         data = Like.get_likes(1)
         result = [x.id for x in data]
-        assert result == [2, 3, ]
+        assert result == [
+            2,
+            3,
+        ]
 
     def test_add(self, db):
         result = Like.add_like(
@@ -100,5 +97,3 @@ class TestLike:
             user_id=3,
         )
         assert result is False
-
-

@@ -21,8 +21,8 @@ class User(db.Model):
         data = db.session.get(User, id)
         result = {}
         if data:
-            result['id'] = data.id
-            result['name'] = data.name
+            result["id"] = data.id
+            result["name"] = data.name
         return result
 
 
@@ -31,16 +31,14 @@ class Follow(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    to_user_id = db.Column(db.ForeignKey('user.id'))
+    to_user_id = db.Column(db.ForeignKey("user.id"))
     to_user = db.relationship(
-        'User', lazy="select", foreign_keys=[to_user_id],
-        backref='following'
+        "User", lazy="select", foreign_keys=[to_user_id], backref="following"
     )
 
-    from_user_id = db.Column(db.ForeignKey('user.id'))
+    from_user_id = db.Column(db.ForeignKey("user.id"))
     from_user = db.relationship(
-        'User', lazy="select", foreign_keys=[from_user_id],
-        backref='followers'
+        "User", lazy="select", foreign_keys=[from_user_id], backref="followers"
     )
 
     def __repr__(self):
@@ -48,10 +46,14 @@ class Follow(db.Model):
 
     @classmethod
     def get_follow(cls, from_user, to_user):
-        data = db.session.query(Follow).filter(
-            Follow.to_user_id == to_user,
-            Follow.from_user_id == from_user,
-        ).first()
+        data = (
+            db.session.query(Follow)
+            .filter(
+                Follow.to_user_id == to_user,
+                Follow.from_user_id == from_user,
+            )
+            .first()
+        )
         result = {}
         if data:
             result["to"] = data.to_user.id
@@ -63,10 +65,7 @@ class Follow(db.Model):
         data = db.session.query(Follow).filter(Follow.to_user_id == id)
         result = []
         if data:
-            result = [
-                {'id': x.from_user.id, 'name': x.from_user.name}
-                for x in data
-            ]
+            result = [{"id": x.from_user.id, "name": x.from_user.name} for x in data]
         return result
 
     @classmethod
@@ -74,21 +73,27 @@ class Follow(db.Model):
         data = db.session.query(Follow).filter(Follow.from_user_id == id)
         result = []
         if data:
-            result = [
-                {'id': x.to_user.id, 'name': x.to_user.name}
-                for x in data
-            ]
+            result = [{"id": x.to_user.id, "name": x.to_user.name} for x in data]
         return result
 
     @classmethod
-    def handler_follower(cls, method: str, to_user_id=4, from_user_id=1, ) -> bool:
+    def handler_follower(
+        cls,
+        method: str,
+        to_user_id=4,
+        from_user_id=1,
+    ) -> bool:
         result = False
         user_exist = User.get_user(to_user_id)
         if user_exist:
-            already_exist = db.session.query(Follow).filter(
-                Follow.to_user_id == to_user_id,
-                Follow.from_user_id == from_user_id,
-            ).first()
+            already_exist = (
+                db.session.query(Follow)
+                .filter(
+                    Follow.to_user_id == to_user_id,
+                    Follow.from_user_id == from_user_id,
+                )
+                .first()
+            )
             if method == "POST" and not already_exist:
                 result = Follow.add_follower(
                     to_user_id=to_user_id,
@@ -114,7 +119,7 @@ class Follow(db.Model):
 
 
 class Like(db.Model):
-    __tablename__ = 'like'
+    __tablename__ = "like"
 
     id = db.Column(db.Integer, primary_key=True)
 
@@ -148,10 +153,14 @@ class Like(db.Model):
 
     @classmethod
     def get_like(cls, user_id: int, tweet_id: int) -> Any | bool:
-        res = db.session.query(Like).filter(
-            Like.user_id == user_id,
-            Like.tweet_id == tweet_id,
-        ).first()
+        res = (
+            db.session.query(Like)
+            .filter(
+                Like.user_id == user_id,
+                Like.tweet_id == tweet_id,
+            )
+            .first()
+        )
         if res:
             return res
         return False
@@ -181,7 +190,6 @@ class Like(db.Model):
 
     @classmethod
     def delete(cls, user_id: int, tweet_id: int) -> bool:
-
         like = Like.get_like(user_id, tweet_id)
         if like:
             db.session.delete(like)
@@ -218,10 +226,14 @@ class Tweet(db.Model):
         return res
 
     @classmethod
-    def get_tweets(cls, user_id: int) -> List[Any, ]:
-        res = db.session.query(Tweet).filter(
-            Tweet.user_id == user_id,
-        ).all()
+    def get_tweets(cls, user_id: int) -> List[Any,]:
+        res = (
+            db.session.query(Tweet)
+            .filter(
+                Tweet.user_id == user_id,
+            )
+            .all()
+        )
         return res
 
     @classmethod

@@ -5,17 +5,17 @@ from pydantic import BaseModel, Field
 
 class Author(BaseModel):
     id: int
-    name: str = 'John Doe'
+    name: str = "John Doe"
 
 
 class Likes(BaseModel):
     user_id: int = 0
-    name: str = 'Foe'
+    name: str = "Foe"
 
 
 class TweetList(BaseModel):
     id: int = Field(default=0, examples=[2])
-    content: str = Field(default='Test')
+    content: str = Field(default="Test")
     attachments: list = Field(examples=[])
     author: Author
 

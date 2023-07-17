@@ -1,30 +1,26 @@
-
 from fastapi import Depends, APIRouter, Request, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse
 
 from database import get_async_session
 from models import Tweet, Like
+from routers.user import fastapi_users
 from schemas.base import Success
 from schemas.tweet import TweetGet, TweetPost, TweetPostSuccess
 
 router = APIRouter()
 
 
-@router.get(
-    '/api/tweets', tags=['Tweet'],
-    response_model=TweetGet
-)
+@router.get("/api/tweets", tags=["Tweet"], response_model=TweetGet)
 async def get_tweets(
-        request: Request,
-        session: AsyncSession = Depends(get_async_session),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """
     Get all tweets created by you.
     """
-    self_id = request.headers.get('api-key')
+    self_id = fastapi_users.current_user().id
     if not self_id:
-        self_id = 1
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
     tweets = await Tweet.get_tweets(
         user_id=self_id,
@@ -48,35 +44,32 @@ async def get_tweets(
                     "attachments": [],
                     "author": {
                         "id": 1,
-                        "name": 'str',
+                        "name": "str",
                     },
                     "likes": [
-                        {
-                            "user_id": x.user_id,
-                            "name": x.user_backref.name
-                        } for x in likes
-                    ]
+                        {"user_id": x.user_id, "name": x.user_backref.name}
+                        for x in likes
+                    ],
                 }
             )
     return JSONResponse(response, status_code=200)
 
 
 @router.post(
-    '/api/tweets',
-    tags=['Tweet'],
+    "/api/tweets",
+    tags=["Tweet"],
     response_model=TweetPostSuccess,
 )
 async def post_tweets(
-        item: TweetPost,
-        request: Request,
-        session: AsyncSession = Depends(get_async_session),
+    item: TweetPost,
+    session: AsyncSession = Depends(get_async_session),
 ):
     """
     Create new tweet.
     """
-    self_id = request.headers.get('api-key')
+    self_id = fastapi_users.current_user.id
     if not self_id:
-        self_id = 1
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
     if item.dict():
         content = item.tweet_data
@@ -96,60 +89,43 @@ async def post_tweets(
                 "tweet_id": tweet.id,
             }
             return JSONResponse(response, status_code=201)
-    raise HTTPException(
-        status_code=400,
-        detail="Data not valid."
-    )
+    raise HTTPException(status_code=400, detail="Data not valid.")
 
 
-@router.delete(
-    '/api/tweets/{id}',
-    tags=['Tweet'],
-    response_model=Success
-)
+@router.delete("/api/tweets/{id}", tags=["Tweet"], response_model=Success)
 async def delete_tweets(
-        id: int,
-        request: Request,
-        session: AsyncSession = Depends(get_async_session),
+    id: int,
+    session: AsyncSession = Depends(get_async_session),
 ):
     """
     Delete tweet instance from bd.
     """
-    self_id = request.headers.get('api-key')
+    self_id = fastapi_users.current_user.id
     if not self_id:
-        self_id = 1
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
-    tweet = await Tweet.delete(
-        user_id=self_id,
-        tweet_id=id,
-        session=session
-    )
+    tweet = await Tweet.delete(user_id=self_id, tweet_id=id, session=session)
     if tweet:
         response = {"result": True}
         return JSONResponse(response, status_code=204)
 
-    raise HTTPException(
-        status_code=400,
-        detail="Instance of tweet dont exist."
-    )
+    raise HTTPException(status_code=400, detail="Instance of tweet dont exist.")
 
 
 @router.post(
-    '/api/tweets/{id}/likes',
-    tags=['Tweet'],
+    "/api/tweets/{id}/likes",
+    tags=["Tweet"],
     response_model=Success,
 )
 async def post_likes(
-        id: int,
-        request: Request,
-        session: AsyncSession = Depends(get_async_session)
+    id: int, session: AsyncSession = Depends(get_async_session)
 ):
     """
     Add like to tweet.
     """
-    self_id = request.headers.get('api-key')
+    self_id = fastapi_users.current_user.id
     if not self_id:
-        self_id = 1
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
     like = await Like.add_like(
         user_id=self_id,
@@ -160,40 +136,24 @@ async def post_likes(
         response = {"result": True}
         return JSONResponse(response, status_code=201)
 
-    raise HTTPException(
-        status_code=400,
-        detail="Instance of tweet dont exist or user."
-    )
+    raise HTTPException(status_code=400, detail="Instance of tweet dont exist or user.")
 
 
-@router.delete(
-    '/api/tweets/{id}/likes',
-    response_model=Success,
-    tags=['Tweet']
-)
+@router.delete("/api/tweets/{id}/likes", response_model=Success, tags=["Tweet"])
 async def delete_likes(
-        id: int,
-        request: Request,
-        session: AsyncSession = Depends(get_async_session)
+    id: int, session: AsyncSession = Depends(get_async_session)
 ):
     """
     Delete like from tweet.
     """
-    self_id = request.headers.get('api-key')
+    self_id = fastapi_users.current_user.id
     if not self_id:
-        self_id = 1
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
-    like = await Like.delete(
-        user_id=self_id,
-        tweet_id=id,
-        session=session
-    )
+    like = await Like.delete(user_id=self_id, tweet_id=id, session=session)
 
     if like:
         response = {"result": True}
         return JSONResponse(response, status_code=204)
 
-    raise HTTPException(
-        status_code=400,
-        detail="Like instance dont exist."
-    )
+    raise HTTPException(status_code=400, detail="Like instance dont exist.")

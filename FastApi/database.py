@@ -14,9 +14,7 @@ Base = declarative_base()
 metadata = MetaData()
 
 engine = create_async_engine(DATABASE_URL, poolclass=NullPool)
-async_session = sessionmaker(
-    bind=engine, expire_on_commit=False, class_=AsyncSession
-)
+async_session = sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
 
 
 async def create_db_and_tables():

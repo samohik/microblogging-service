@@ -3,16 +3,7 @@ from datetime import datetime
 
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import (
-    Integer,
-    Column,
-    String,
-    ForeignKey,
-    DateTime,
-    BLOB,
-    select,
-    Text
-)
+from sqlalchemy import Integer, Column, String, ForeignKey, DateTime, BLOB, select, Text
 from sqlalchemy.orm import relationship, backref, selectinload
 
 from auth.models import User
@@ -24,16 +15,14 @@ class Follow(Base):
 
     id = Column(Integer, primary_key=True)
 
-    to_user_id = Column(ForeignKey('user.id'))
+    to_user_id = Column(ForeignKey("user.id"))
     to_user = relationship(
-        'User', lazy="select", foreign_keys=[to_user_id],
-        backref='following'
+        "User", lazy="select", foreign_keys=[to_user_id], backref="following"
     )
 
-    from_user_id = Column(ForeignKey('user.id'))
+    from_user_id = Column(ForeignKey("user.id"))
     from_user = relationship(
-        'User', lazy="select", foreign_keys=[from_user_id],
-        backref='followers'
+        "User", lazy="select", foreign_keys=[from_user_id], backref="followers"
     )
 
     def __repr__(self):
@@ -41,17 +30,21 @@ class Follow(Base):
 
     @classmethod
     async def get_follow(
-            cls,
-            session: AsyncSession,
-            from_user: int,
-            to_user: int,
+        cls,
+        session: AsyncSession,
+        from_user: int,
+        to_user: int,
     ):
-        query = select(cls).where(
-            cls.to_user_id == to_user,
-            cls.from_user_id == from_user,
-        ).options(
-            selectinload(cls.to_user),
-            selectinload(cls.from_user),
+        query = (
+            select(cls)
+            .where(
+                cls.to_user_id == to_user,
+                cls.from_user_id == from_user,
+            )
+            .options(
+                selectinload(cls.to_user),
+                selectinload(cls.from_user),
+            )
         )
         data = (await session.execute(query)).scalars().first()
         print(data)
@@ -63,53 +56,51 @@ class Follow(Base):
 
     @classmethod
     async def get_follower(
-            cls,
-            session: AsyncSession,
-            id: int,
+        cls,
+        session: AsyncSession,
+        id: int,
     ) -> List[Dict]:
-        query = select(cls).where(
-            cls.to_user_id == id
-        ).options(
-            selectinload(cls.to_user),
-            selectinload(cls.from_user),
+        query = (
+            select(cls)
+            .where(cls.to_user_id == id)
+            .options(
+                selectinload(cls.to_user),
+                selectinload(cls.from_user),
+            )
         )
         data = (await session.execute(query)).scalars().all()
         result = []
         if data:
-            result = [
-                {'id': x.from_user.id, 'name': x.from_user.name}
-                for x in data
-            ]
+            result = [{"id": x.from_user.id, "name": x.from_user.name} for x in data]
         return result
 
     @classmethod
     async def get_following(
-            cls,
-            session: AsyncSession,
-            id: int,
+        cls,
+        session: AsyncSession,
+        id: int,
     ) -> List[Dict]:
-        query = select(cls).where(
-            cls.from_user_id == id
-        ).options(
-            selectinload(cls.to_user),
-            selectinload(cls.from_user),
+        query = (
+            select(cls)
+            .where(cls.from_user_id == id)
+            .options(
+                selectinload(cls.to_user),
+                selectinload(cls.from_user),
+            )
         )
         data = (await session.execute(query)).scalars().all()
         result = []
         if data:
-            result = [
-                {'id': x.to_user.id, 'name': x.to_user.name}
-                for x in data
-            ]
+            result = [{"id": x.to_user.id, "name": x.to_user.name} for x in data]
         return result
 
     @classmethod
     async def handler_follower(
-            cls,
-            session: AsyncSession,
-            method: str,
-            to_user_id: int = 4,
-            from_user_id: int = 1,
+        cls,
+        session: AsyncSession,
+        method: str,
+        to_user_id: int = 4,
+        from_user_id: int = 1,
     ) -> bool:
         result = False
         user_exist = await User.get_user(
@@ -117,12 +108,16 @@ class Follow(Base):
             session=session,
         )
         if user_exist:
-            query = select(Follow).filter(
-                Follow.to_user_id == to_user_id,
-                Follow.from_user_id == from_user_id,
-            ).options(
-                selectinload(Follow.to_user),
-                selectinload(Follow.from_user),
+            query = (
+                select(Follow)
+                .filter(
+                    Follow.to_user_id == to_user_id,
+                    Follow.from_user_id == from_user_id,
+                )
+                .options(
+                    selectinload(Follow.to_user),
+                    selectinload(Follow.from_user),
+                )
             )
             already_exist = (await session.execute(query)).scalars().first()
             if method == "POST" and not already_exist:
@@ -139,12 +134,7 @@ class Follow(Base):
         return result
 
     @classmethod
-    async def add_follower(
-            cls,
-            session: AsyncSession,
-            to_user_id,
-            from_user_id
-    ):
+    async def add_follower(cls, session: AsyncSession, to_user_id, from_user_id):
         follower = Follow(
             to_user_id=to_user_id,
             from_user_id=from_user_id,
@@ -155,9 +145,9 @@ class Follow(Base):
 
     @classmethod
     async def delete_follower(
-            cls,
-            session: AsyncSession,
-            item,
+        cls,
+        session: AsyncSession,
+        item,
     ):
         await session.delete(item)
         await session.commit()
@@ -165,7 +155,7 @@ class Follow(Base):
 
 
 class Like(Base):
-    __tablename__ = 'like'
+    __tablename__ = "like"
 
     id = Column(Integer, primary_key=True)
 
@@ -199,17 +189,18 @@ class Like(Base):
 
     @classmethod
     async def get_like(
-            cls,
-            session: AsyncSession,
-            user_id: int,
-            tweet_id: int
+        cls, session: AsyncSession, user_id: int, tweet_id: int
     ) -> Any | bool:
-        query = select(Like).where(
-            Like.user_id == user_id,
-            Like.tweet_id == tweet_id,
-        ).options(
-            selectinload(cls.tweet_backref),
-            selectinload(cls.user_backref),
+        query = (
+            select(Like)
+            .where(
+                Like.user_id == user_id,
+                Like.tweet_id == tweet_id,
+            )
+            .options(
+                selectinload(cls.tweet_backref),
+                selectinload(cls.user_backref),
+            )
         )
         res = (await session.execute(query)).scalars().first()
         if res:
@@ -217,27 +208,20 @@ class Like(Base):
         return False
 
     @classmethod
-    async def get_likes(
-            cls,
-            session: AsyncSession,
-            tweet_id: int
-    ) -> List:
-        query = select(Like).filter(
-            Like.tweet_id == tweet_id
-        ).options(
-            selectinload(cls.user_backref),
-            selectinload(cls.tweet_backref),
+    async def get_likes(cls, session: AsyncSession, tweet_id: int) -> List:
+        query = (
+            select(Like)
+            .filter(Like.tweet_id == tweet_id)
+            .options(
+                selectinload(cls.user_backref),
+                selectinload(cls.tweet_backref),
+            )
         )
         res = (await session.execute(query)).scalars().all()
         return res
 
     @classmethod
-    async def add_like(
-            cls,
-            session: AsyncSession,
-            user_id: int,
-            tweet_id: int
-    ) -> bool:
+    async def add_like(cls, session: AsyncSession, user_id: int, tweet_id: int) -> bool:
         user = await User.get_user(
             session=session,
             id=user_id,
@@ -263,13 +247,7 @@ class Like(Base):
         return False
 
     @classmethod
-    async def delete(
-            cls,
-            session: AsyncSession,
-            user_id: int,
-            tweet_id: int
-    ) -> bool:
-
+    async def delete(cls, session: AsyncSession, user_id: int, tweet_id: int) -> bool:
         like = await Like.get_like(
             session=session,
             user_id=user_id,
@@ -306,20 +284,12 @@ class Tweet(Base):
         return str(self.id)
 
     @classmethod
-    async def get_tweet(
-            cls,
-            session: AsyncSession,
-            tweet_id: int
-    ) -> Any:
+    async def get_tweet(cls, session: AsyncSession, tweet_id: int) -> Any:
         res = await session.get(Tweet, tweet_id)
         return res
 
     @classmethod
-    async def get_tweets(
-            cls,
-            session: AsyncSession,
-            user_id: int
-    ) -> List[Any, ]:
+    async def get_tweets(cls, session: AsyncSession, user_id: int) -> List[Any,]:
         query = select(cls).where(
             Tweet.user_id == user_id,
         )
@@ -328,10 +298,7 @@ class Tweet(Base):
 
     @classmethod
     async def add_tweet(
-            cls,
-            session: AsyncSession,
-            user_id: int,
-            content: str
+        cls, session: AsyncSession, user_id: int, content: str
     ) -> Any | bool:
         user = await User.get_user(
             id=user_id,
@@ -348,12 +315,7 @@ class Tweet(Base):
         return False
 
     @classmethod
-    async def delete(
-            cls,
-            session: AsyncSession,
-            user_id: int,
-            tweet_id: int
-    ) -> bool:
+    async def delete(cls, session: AsyncSession, user_id: int, tweet_id: int) -> bool:
         tweet = await Tweet.get_tweet(
             tweet_id=tweet_id,
             session=session,
