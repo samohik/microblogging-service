@@ -3,10 +3,8 @@ import os
 from typing import AsyncGenerator
 
 import pytest
-from fastapi.testclient import TestClient
 
 from httpx import AsyncClient
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     create_async_engine,
@@ -14,7 +12,8 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
-from models import User, Follow, Tweet, Like
+from auth.models import User
+from models import Follow, Tweet, Like
 from database import Base, metadata, get_async_session
 from main import app
 
@@ -72,15 +71,25 @@ async def client():
 
 async def preloaded_data(session: AsyncSession):
     # Users
-    user_me = User(name="Jonny")
+    user_me = User(
+        name="Jonny",
+        email='asd123@gmail.com',
+        hashed_password='Test123'
+    )
     user_id_2 = User(
         name="V",
+        email='fsa231@gmail.com',
+        hashed_password='Test123'
     )
     user_id_3 = User(
         name="Alt",
+        email='gewr2315@gmail.com',
+        hashed_password='Test123'
     )
     user_id_4 = User(
         name="Jade",
+        email='qwet2314@gmail.com',
+        hashed_password='Test123'
     )
     session.add(user_me)
     session.add(user_id_2)

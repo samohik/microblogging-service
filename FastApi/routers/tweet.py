@@ -1,24 +1,26 @@
-from fastapi import Depends, APIRouter, Request
-from marshmallow import ValidationError
+
+from fastapi import Depends, APIRouter, Request, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse
 
 from database import get_async_session
 from models import Tweet, Like
-from schemas import TweetSchema
+from schemas.base import Success
+from schemas.tweet import TweetGet, TweetPost, TweetPostSuccess
 
 router = APIRouter()
 
 
-@router.get('/api/tweets')
+@router.get(
+    '/api/tweets', tags=['Tweet'],
+    response_model=TweetGet
+)
 async def get_tweets(
         request: Request,
-        session: AsyncSession = Depends(get_async_session)
+        session: AsyncSession = Depends(get_async_session),
 ):
     """
-    GET /api/tweets
-    HTTP-Params:
-    api-key: str
+    Get all tweets created by you.
     """
     self_id = request.headers.get('api-key')
     if not self_id:
@@ -49,82 +51,69 @@ async def get_tweets(
                         "name": 'str',
                     },
                     "likes": [
-                        {"user_id": x.user_id, "name": x.user_backref.name} for x in likes
+                        {
+                            "user_id": x.user_id,
+                            "name": x.user_backref.name
+                        } for x in likes
                     ]
                 }
             )
     return JSONResponse(response, status_code=200)
 
 
-@router.post('/api/tweets')
+@router.post(
+    '/api/tweets',
+    tags=['Tweet'],
+    response_model=TweetPostSuccess,
+)
 async def post_tweets(
+        item: TweetPost,
         request: Request,
         session: AsyncSession = Depends(get_async_session),
 ):
     """
-    POST /api/tweets
-    HTTP-Params:
-    api-key: str
-    {
-        “tweet_data”: string
-        “tweet_media_ids”: Array[int]
-    }
+    Create new tweet.
     """
-
     self_id = request.headers.get('api-key')
     if not self_id:
         self_id = 1
 
-    data = await request.json()
-    schema = TweetSchema()
+    if item.dict():
+        content = item.tweet_data
 
-    response = {
-        "result": False,
-        "error_type": str,
-        "error_message": str,
-    }
-    try:
-        validated_data = schema.load(data)
-    except ValidationError as e:
-        response["error_type"] = e
-        response["error_message"] = e.messages,
+        tweet = await Tweet.add_tweet(
+            user_id=self_id,
+            content=content,
+            session=session,
+        )
+        if tweet:
+            # add_media
+            # "tweet_media_ids": []
+            # Media.add_media(item) for item in tweet_media_ids
 
-        return JSONResponse(response, status_code=400)
-
-    content = validated_data['tweet_data']
-
-    tweet = await Tweet.add_tweet(
-        user_id=self_id,
-        content=content,
-        session=session,
+            response = {
+                "result": True,
+                "tweet_id": tweet.id,
+            }
+            return JSONResponse(response, status_code=201)
+    raise HTTPException(
+        status_code=400,
+        detail="Data not valid."
     )
-    if tweet:
-        # todo  add_media
-        # "tweet_media_ids": []
-        # Media.add_media(item) for item in tweet_media_ids
-
-        response = {
-            "result": True,
-            "tweet_id": tweet.id,
-        }
-        return JSONResponse(response, status_code=201)
-    return JSONResponse(response, status_code=400)
 
 
-@router.delete('/api/tweets/{id}')
+@router.delete(
+    '/api/tweets/{id}',
+    tags=['Tweet'],
+    response_model=Success
+)
 async def delete_tweets(
         id: int,
         request: Request,
         session: AsyncSession = Depends(get_async_session),
 ):
     """
-    DELETE /api/tweets/<id>
-    HTTP-Params:
-    api-key: str
-    В ответ должно вернуться сообщение о статусе операции.
-    {
-        “result”: true
-    }
+    Delete tweet instance from bd.
     """
     self_id = request.headers.get('api-key')
     if not self_id:
@@ -135,79 +124,76 @@ async def delete_tweets(
         tweet_id=id,
         session=session
     )
-    response = {
-        "result": False,
-        #     "error_type": e,
-        #     "error_message": e.messages,
-    }
     if tweet:
         response = {"result": True}
         return JSONResponse(response, status_code=204)
 
-    return JSONResponse(response, status_code=400)
+    raise HTTPException(
+        status_code=400,
+        detail="Instance of tweet dont exist."
+    )
 
 
-@router.post('/api/tweets/{id}/likes')
+@router.post(
+    '/api/tweets/{id}/likes',
+    tags=['Tweet'],
+    response_model=Success,
+)
 async def post_likes(
         id: int,
         request: Request,
         session: AsyncSession = Depends(get_async_session)
 ):
     """
-    POST /api/tweets/<id>/likes
-    HTTP-Params:
-    api-key: str
-    В ответ должно вернуться сообщение о статусе операции.
-    {
-    “result”: true
-    }
+    Add like to tweet.
     """
     self_id = request.headers.get('api-key')
     if not self_id:
         self_id = 1
+
     like = await Like.add_like(
         user_id=self_id,
         tweet_id=id,
         session=session,
     )
-    response = {
-        "result": False,
-        # todo error message
-        # "error_type": e,
-        # "error_message": e.messages,
-    }
     if like:
         response = {"result": True}
-    return JSONResponse(response, status_code=201)
+        return JSONResponse(response, status_code=201)
+
+    raise HTTPException(
+        status_code=400,
+        detail="Instance of tweet dont exist or user."
+    )
 
 
-@router.delete('/api/tweets/{id}/likes')
+@router.delete(
+    '/api/tweets/{id}/likes',
+    response_model=Success,
+    tags=['Tweet']
+)
 async def delete_likes(
         id: int,
+        request: Request,
         session: AsyncSession = Depends(get_async_session)
 ):
     """
-    DELETE /api/tweets/<id>/likes
-    HTTP-Params:
-    api-key: str
-    В ответ должно вернуться сообщение о статусе операции.
-    {
-        “result”: true
-    }
+    Delete like from tweet.
     """
-    user_id = 1
+    self_id = request.headers.get('api-key')
+    if not self_id:
+        self_id = 1
+
     like = await Like.delete(
-        user_id=user_id,
+        user_id=self_id,
         tweet_id=id,
         session=session
     )
-    response = {
-        "result": False,
-        # todo error message
-        # "error_type": e,
-        # "error_message": e.messages,
-    }
+
     if like:
         response = {"result": True}
         return JSONResponse(response, status_code=204)
-    return JSONResponse(response, status_code=400)
+
+    raise HTTPException(
+        status_code=400,
+        detail="Like instance dont exist."
+    )

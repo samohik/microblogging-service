@@ -1,12 +1,5 @@
-from datetime import datetime
 from typing import List, Dict, Any
 from datetime import datetime
-
-from fastapi import Depends
-from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
-from sqlalchemy import (
-    Column, String, Boolean, Integer,
-    TIMESTAMP, ForeignKey)
 
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,31 +14,9 @@ from sqlalchemy import (
     Text
 )
 from sqlalchemy.orm import relationship, backref, selectinload
-from database import Base, get_async_session
 
-
-class User(Base):
-    __tablename__ = "user"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(80), unique=True, index=True)
-    password = Column(String(120), )
-
-    def __repr__(self):
-        return "Id: {id}\nName: {name}".format(id=self.id, name=self.name)
-
-    @classmethod
-    async def get_user(
-            cls,
-            session: AsyncSession,
-            id: int,
-    ) -> dict[str, Any]:
-        data = await session.get(cls, id)
-        result = {}
-        if data:
-            result['id'] = data.id
-            result['name'] = data.name
-        return result
+from auth.models import User
+from database import Base
 
 
 class Follow(Base):

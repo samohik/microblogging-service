@@ -1,27 +1,35 @@
-from fastapi import Depends, APIRouter, Request
+from fastapi import Depends, APIRouter, Request, Path, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse
-from database import get_async_session
-from models import User, Follow
 
+from auth.models import User
+from database import get_async_session
+from models import Follow
+from schemas.base import Success
+from schemas.user import GetUser
 
 router = APIRouter()
 
 
-@router.get('/api/users/{id}')
+@router.get(
+    '/api/users/{id}',
+    tags=['User'],
+    response_model=GetUser,
+)
 async def get_user_id(
-        id: int | str,
         request: Request,
+        id: int | str = Path(
+            ...,
+            title="Item ID",
+            description="You can use int or if you want get yours data use `me`",
+            example='me',
+        ),
         session: AsyncSession = Depends(get_async_session),
 ):
     """
-    GET /api/users/<id>
-    GET /api/users/me
-    Пользователь может получить информацию о произвольном
-     профиле по его id:
-    HTTP-Params:
-    api-key: str
+    Get user data and his followers and following.
     """
+
     if id == 'me':
         id = request.headers.get('api-key')
         if not id:
@@ -40,12 +48,6 @@ async def get_user_id(
         id=id,
         session=session
     )
-    response = {
-        "result": False,
-        #     "error_type": e,
-        #     "error_message": e.messages,
-    }
-
     if user_exist:
         response = {
             "result": True,
@@ -55,51 +57,55 @@ async def get_user_id(
         response["user"].update({"following": following})
         return JSONResponse(response, status_code=200)
 
-    return JSONResponse(response, status_code=400)
+    raise HTTPException(
+        status_code=400,
+        detail="User dont exist."
+    )
 
 
-@router.post('/api/users/{id}/follow')
+@router.post(
+    '/api/users/{id}/follow',
+    tags=['User'],
+    response_model=Success,
+)
 async def post(
         id: int,
+        request: Request,
         session: AsyncSession = Depends(get_async_session),
 ):
     """
-    POST /api/users/<id>/follow
-    HTTP-Params:
-    api-key: str
-    В ответ должно вернуться сообщение о статусе операции.
-    {
-        “result”: true
-    }
+    Subscribe to user by id.
     """
+    self_user = request.headers.get('api-key')
+    if not self_user:
+        self_user = 1
+
     result = await Follow.handler_follower(
-        from_user_id=1,
+        from_user_id=self_user,
         to_user_id=id,
         method="POST",
         session=session,
     )
-    data = {
-        "result": False,
-        #     "error_type": e,
-        #     "error_message": e.messages,
-    }
     if result:
         data = {"result": True}
-    return JSONResponse(data, status_code=201)
+        return JSONResponse(data, status_code=201)
+    raise HTTPException(
+        status_code=400,
+        detail="User dont exist."
+    )
 
 
-@router.delete('/api/users/{id}/follow')
+@router.delete(
+    '/api/users/{id}/follow',
+    tags=['User'],
+    response_model=Success,
+)
 async def delete(
         id: int,
         session: AsyncSession = Depends(get_async_session)
 ):
-    """DELETE /api/users/<id>/follow
-    HTTP-Params:
-    api-key: str
-    В ответ должно вернуться сообщение о статусе операции.
-    {
-        “result”: true
-    }
+    """
+    Unsubscribe from user by id.
     """
     result = await Follow.handler_follower(
         from_user_id=1,
@@ -107,11 +113,10 @@ async def delete(
         method="DELETE",
         session=session,
     )
-    data = {
-        "result": False,
-        #     "error_type": e,
-        #     "error_message": e.messages,
-    }
     if result:
         data = {"result": True}
-    return JSONResponse(data, status_code=204)
+        return JSONResponse(data, status_code=204)
+    raise HTTPException(
+        status_code=400,
+        detail="User dont exist."
+    )

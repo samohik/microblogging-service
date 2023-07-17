@@ -1,5 +1,16 @@
 version: '3.11'
 services:
+  fastapi:
+    build: .
+    expose:
+      -  "8000"
+    command: >
+      sh -c "pytest &&
+            uvicorn main:app --host 0.0.0.0 --port 8000"
+    ports:
+      - "8000:8000"
+
+
 #  flask:
 #    build:
 #      context: .
@@ -12,10 +23,10 @@ services:
 #      - postgres
 
 
-  postgres:
-    image: postgres:15-alpine
-    ports:
-      - '${DB_PORT}:5432'
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASS}
+#  postgres:
+#    image: postgres:15-alpine
+#    ports:
+#      - '${DB_PORT}:5432'
+#    environment:
+#      POSTGRES_USER: ${DB_USER}
+#      POSTGRES_PASSWORD: ${DB_PASS}

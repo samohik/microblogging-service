@@ -2,10 +2,13 @@ FROM python:3.11
 
 RUN pip3 install --upgrade pip
 
-ADD requirements.txt Flask/
+ADD requirements.txt FastApi/
 
-RUN pip install -r Flask/requirements.txt
+RUN pip install -r FastApi/requirements.txt
 
-COPY Flask/ /Flask
+COPY FastApi/ /FastApi
 
-EXPOSE 5000
+EXPOSE 8000
+
+WORKDIR FastApi/
+

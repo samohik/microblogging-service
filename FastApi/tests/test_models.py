@@ -1,9 +1,8 @@
 import pytest
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from auth.models import User
 from models import (
-    User,
     Follow,
     Tweet,
     Like,
@@ -11,7 +10,11 @@ from models import (
 
 
 async def test_db(async_db):
-    user = User(name='Test')
+    user = User(
+        name='Test',
+        email='678@gmail.com',
+        hashed_password='4567'
+    )
     async_db.add(user)
     await async_db.commit()
     res1 = await async_db.get(User, 1)
@@ -23,30 +26,6 @@ async def test_db(async_db):
 
 
 class TestUser:
-    # async def async_setup_method(
-    #         self,
-    #         async_db: AsyncSession
-    # ):
-    #     user_me = User(name="Jonny")
-    #     user_id_2 = User(
-    #         name="V",
-    #     )
-    #     user_id_3 = User(
-    #         name="Alt",
-    #     )
-    #     user_id_4 = User(
-    #         name="Jade",
-    #     )
-    #     async_db.add(user_me)
-    #     async_db.add(user_id_2)
-    #     async_db.add(user_id_3)
-    #     async_db.add(user_id_4)
-    #     await async_db.flush()
-
-        # yield
-
-        # await async_db.close()
-
     async def test_get_user(self, async_db):
         data_2 = await User.get_user(
             id=2,
