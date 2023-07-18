@@ -40,7 +40,7 @@ app.include_router(
 )
 
 
-@app.get("/protected-route", tags=['authorization'])
+@app.get("/protected-route", tags=["authorization"])
 def protected_route(user: User = Depends(fastapi_users.current_user())):
     return f"Hello, {user.name}"
 

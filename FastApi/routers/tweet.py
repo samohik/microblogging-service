@@ -2,6 +2,7 @@ from fastapi import Depends, APIRouter, Request, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse
 
+from auth.models import User
 from database import get_async_session
 from models import Tweet, Like
 from routers.user import fastapi_users
@@ -13,14 +14,16 @@ router = APIRouter()
 
 @router.get("/api/tweets", tags=["Tweet"], response_model=TweetGet)
 async def get_tweets(
+    current_user: User = Depends(fastapi_users.current_user()),
     session: AsyncSession = Depends(get_async_session),
 ):
     """
     Get all tweets created by you.
     """
-    self_id = fastapi_users.current_user().id
-    if not self_id:
+    if not current_user:
         raise HTTPException(status_code=401, detail="Unauthorized")
+
+    self_id = current_user.id
 
     tweets = await Tweet.get_tweets(
         user_id=self_id,
@@ -63,13 +66,15 @@ async def get_tweets(
 async def post_tweets(
     item: TweetPost,
     session: AsyncSession = Depends(get_async_session),
+    current_user: User = Depends(fastapi_users.current_user()),
 ):
     """
     Create new tweet.
     """
-    self_id = fastapi_users.current_user.id
-    if not self_id:
+    if not current_user:
         raise HTTPException(status_code=401, detail="Unauthorized")
+
+    self_id = current_user.id
 
     if item.dict():
         content = item.tweet_data
@@ -96,13 +101,15 @@ async def post_tweets(
 async def delete_tweets(
     id: int,
     session: AsyncSession = Depends(get_async_session),
+    current_user: User = Depends(fastapi_users.current_user()),
 ):
     """
     Delete tweet instance from bd.
     """
-    self_id = fastapi_users.current_user.id
-    if not self_id:
+    if not current_user:
         raise HTTPException(status_code=401, detail="Unauthorized")
+
+    self_id = current_user.id
 
     tweet = await Tweet.delete(user_id=self_id, tweet_id=id, session=session)
     if tweet:
@@ -118,14 +125,17 @@ async def delete_tweets(
     response_model=Success,
 )
 async def post_likes(
-    id: int, session: AsyncSession = Depends(get_async_session)
+    id: int,
+    session: AsyncSession = Depends(get_async_session),
+    current_user: User = Depends(fastapi_users.current_user()),
 ):
     """
     Add like to tweet.
     """
-    self_id = fastapi_users.current_user.id
-    if not self_id:
+    if not current_user:
         raise HTTPException(status_code=401, detail="Unauthorized")
+
+    self_id = current_user.id
 
     like = await Like.add_like(
         user_id=self_id,
@@ -141,14 +151,17 @@ async def post_likes(
 
 @router.delete("/api/tweets/{id}/likes", response_model=Success, tags=["Tweet"])
 async def delete_likes(
-    id: int, session: AsyncSession = Depends(get_async_session)
+    id: int,
+    session: AsyncSession = Depends(get_async_session),
+    current_user: User = Depends(fastapi_users.current_user()),
 ):
     """
     Delete like from tweet.
     """
-    self_id = fastapi_users.current_user.id
-    if not self_id:
+    if not current_user:
         raise HTTPException(status_code=401, detail="Unauthorized")
+
+    self_id = current_user.id
 
     like = await Like.delete(user_id=self_id, tweet_id=id, session=session)
 

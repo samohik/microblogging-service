@@ -1,8 +1,21 @@
 from models import Tweet, Follow
+from tests.conftest import authenticate
+
+
+async def test_auth(client, async_db):
+    response = await client.post('/auth/jwt/login', data={
+        "username": "asdad123@gmail.com",
+        "password": "Test123",
+    })
+    token = response.json()["access_token"]
+    assert token is not None
+    # return token
 
 
 class TestTweetsApi:
     async def test_get(self, client, async_db):
+        await authenticate(client)
+
         result = await Tweet.get_tweet(
             tweet_id=1,
             session=async_db,
@@ -14,7 +27,7 @@ class TestTweetsApi:
             "tweets": [
                 {
                     "attachments": [],
-                    "author": {"id": 1, "name": "str"},  # TODO Tweet test_get author
+                    "author": {"id": 1, "name": "str"},
                     "content": "Test",
                     "id": 1,
                     "likes": [

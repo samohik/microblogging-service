@@ -1,7 +1,10 @@
 from typing import Any
 
 from fastapi import Depends
-from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
+from fastapi_users.db import (
+    SQLAlchemyBaseUserTable,
+    SQLAlchemyUserDatabase,
+)
 from sqlalchemy import (
     Column,
     String,
@@ -15,7 +18,7 @@ from database import Base, get_async_session
 
 
 class User(SQLAlchemyBaseUserTable[int], Base):
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
 
     name: Mapped[str] = mapped_column(String(50), nullable=False)
 

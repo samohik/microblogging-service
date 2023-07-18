@@ -66,19 +66,59 @@ async def async_db():
 @pytest.fixture(scope="session")
 async def client():
     async with AsyncClient(app=app, base_url="http://127.0.0.1") as ac:
-        await ac.post('/auth/jwt/login', json={
-            "username": "asd123@gmail.com",
-            "password": "Test123",
-        })
         yield ac
+
+
+async def authenticate(client):
+    response = await client.post(
+        "/auth/jwt/login",
+        data={
+            "username": "asdad123@gmail.com",
+            "password": "Test123",
+        },
+    )
+    token = response.json()["access_token"]
+
+    headers = {"Authorization": f"Bearer {token}"}
+    await client.get(
+        "/protected-route", headers=headers
+    )
 
 
 async def preloaded_data(session: AsyncSession):
     # Users
-    user_me = User(name="Jonny", email="asd123@gmail.com", hashed_password="Test123")
-    user_id_2 = User(name="V", email="fsa231@gmail.com", hashed_password="Test123")
-    user_id_3 = User(name="Alt", email="gewr2315@gmail.com", hashed_password="Test123")
-    user_id_4 = User(name="Jade", email="qwet2314@gmail.com", hashed_password="Test123")
+    user_me = User(
+        name="Jonny",
+        email="asdad123@gmail.com",
+        hashed_password="Test123",
+        is_active=True,
+        is_superuser=True,
+        is_verified=True,
+    )
+    user_id_2 = User(
+        name="V",
+        email="fsarqt231@gmail.com",
+        hashed_password="Test123",
+        is_active=False,
+        is_superuser=False,
+        is_verified=False,
+    )
+    user_id_3 = User(
+        name="Alt",
+        email="gewrtqwt2315@gmail.com",
+        hashed_password="Test123",
+        is_active=False,
+        is_superuser=False,
+        is_verified=False,
+    )
+    user_id_4 = User(
+        name="Jade",
+        email="qwetqwt2314@gmail.com",
+        hashed_password="Test123",
+        is_active=False,
+        is_superuser=False,
+        is_verified=False,
+    )
     session.add(user_me)
     session.add(user_id_2)
     session.add(user_id_3)

@@ -26,22 +26,25 @@ fastapi_users = FastAPIUsers[User, int](
     response_model=GetUser,
 )
 async def get_user_id(
-        id: int | str = Path(
-            ...,
-            title="Item ID",
-            description="You can use int or if you want get yours data use `me`",
-            example="me",
-        ),
-        session: AsyncSession = Depends(get_async_session),
+    id: int
+    | str = Path(
+        ...,
+        title="Item ID",
+        description="You can use int or if you want get yours data use `me`",
+        example="me",
+    ),
+    current_user: User = Depends(fastapi_users.current_user()),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """
     Get user data and his followers and following.
     """
 
     if id == "me":
-        id = fastapi_users.current_user
-        if not id:
+        if not current_user:
             raise HTTPException(status_code=401, detail="Unauthorized")
+
+        id = current_user.id
 
     user_exist = await User.get_user(id=id, session=session)
 
@@ -62,18 +65,20 @@ async def get_user_id(
     response_model=Success,
 )
 async def post(
-        id: int,
-        session: AsyncSession = Depends(get_async_session),
+    id: int,
+    session: AsyncSession = Depends(get_async_session),
+    current_user: User = Depends(fastapi_users.current_user()),
 ):
     """
     Subscribe to user by id.
     """
-    self_user = fastapi_users.current_user()
-    if not self_user:
+    if not current_user:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
+    self_id = current_user.id
+
     result = await Follow.handler_follower(
-        from_user_id=self_user,
+        from_user_id=self_id,
         to_user_id=id,
         method="POST",
         session=session,
@@ -89,16 +94,21 @@ async def post(
     tags=["User"],
     response_model=Success,
 )
-async def delete(id: int, session: AsyncSession = Depends(get_async_session)):
+async def delete(
+    id: int,
+    session: AsyncSession = Depends(get_async_session),
+    current_user: User = Depends(fastapi_users.current_user()),
+):
     """
     Unsubscribe from user by id.
     """
-    self_user = fastapi_users.current_user.id
-    if not self_user:
+    if not current_user:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
+    self_id = current_user.id
+
     result = await Follow.handler_follower(
-        from_user_id=self_user,
+        from_user_id=self_id,
         to_user_id=id,
         method="DELETE",
         session=session,

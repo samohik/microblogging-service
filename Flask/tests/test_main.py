@@ -15,7 +15,7 @@ class TestTweetsApi:
             "tweets": [
                 {
                     "attachments": [],
-                    "author": {"id": 1, "name": "str"},  # TODO Tweet test_get author
+                    "author": {"id": 1, "name": "str"},
                     "content": "Test",
                     "id": 1,
                     "likes": [
