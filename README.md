@@ -4,6 +4,9 @@
 ```docker-compose build```  
 ```docker-compose up```
 
+
+
 ## Paths :
-- `/api/docs`
+### base ```http://127.0.0.1:8000```  
+- `/docs`
   - `get` - Documentation.  
