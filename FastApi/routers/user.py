@@ -39,11 +39,10 @@ async def get_user_id(
     """
     Get user data and his followers and following.
     """
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
     if id == "me":
-        if not current_user:
-            raise HTTPException(status_code=401, detail="Unauthorized")
-
         id = current_user.id
 
     user_exist = await User.get_user(id=id, session=session)
@@ -64,7 +63,7 @@ async def get_user_id(
     tags=["User"],
     response_model=Success,
 )
-async def post(
+async def post_follow(
     id: int,
     session: AsyncSession = Depends(get_async_session),
     current_user: User = Depends(fastapi_users.current_user()),
@@ -94,7 +93,7 @@ async def post(
     tags=["User"],
     response_model=Success,
 )
-async def delete(
+async def delete_follow(
     id: int,
     session: AsyncSession = Depends(get_async_session),
     current_user: User = Depends(fastapi_users.current_user()),

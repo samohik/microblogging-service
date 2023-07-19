@@ -1,27 +1,23 @@
-from models import Tweet, Follow
-from tests.conftest import authenticate
+import json
 
+import pytest
+from fastapi import HTTPException
 
-async def test_auth(client, async_db):
-    response = await client.post('/auth/jwt/login', data={
-        "username": "asdad123@gmail.com",
-        "password": "Test123",
-    })
-    token = response.json()["access_token"]
-    assert token is not None
-    # return token
+from auth.models import User
+from models import Follow
+from routers.tweet import get_tweets, post_tweets, delete_tweets, post_likes, delete_likes
+from routers.user import get_user_id, post_follow, delete_follow
+from schemas.tweet import TweetPost
 
 
 class TestTweetsApi:
-    async def test_get(self, client, async_db):
-        await authenticate(client)
+    async def test_get(self, async_db):
+        user = await async_db.get(User, 1)
 
-        result = await Tweet.get_tweet(
-            tweet_id=1,
+        response = await get_tweets(
             session=async_db,
+            current_user=user,
         )
-        assert result.id == 1
-        response = await client.get("/api/tweets")
         result = {
             "result": True,
             "tweets": [
@@ -38,38 +34,69 @@ class TestTweetsApi:
             ],
         }
         assert response.status_code == 200
-        assert response.json() == result
+        assert json.loads(response.body.decode('utf-8')) == result
 
-    async def test_post(self, client, async_db):
-        response = await client.post(
-            "/api/tweets",
-            json={
-                "tweet_data": "Test",
-                # "tweet_media_ids": [1, 2],
-            },
+    async def test_post(self, async_db):
+        user = await async_db.get(User, 1)
+
+        item = TweetPost(tweet_data="Test")
+
+        response = await post_tweets(
+            session=async_db,
+            current_user=user,
+            item=item,
         )
         result = {"result": True, "tweet_id": 3}
         assert response.status_code == 201
-        assert response.json() == result
+        assert json.loads(response.body.decode('utf-8')) == result
 
-    async def test_delete(self, client, async_db):
-        response = await client.delete("/api/tweets/1")
+    async def test_delete(self, async_db):
+        user = await async_db.get(User, 1)
+
+        response = await delete_tweets(
+            id=1,
+            session=async_db,
+            current_user=user,
+        )
         assert response.status_code == 204
-        response = await client.delete("/api/tweets/3")
-        assert response.status_code == 400
 
-    async def test_post_likes(self, client, async_db):
-        response = await client.post("/api/tweets/1/likes")
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_tweets(
+                id=3,
+                session=async_db,
+                current_user=user,
+            )
+        assert exc_info.value.status_code == 400
+
+    async def test_post_likes(self, async_db):
+        user = await async_db.get(User, 1)
+
+        response = await post_likes(
+            id=1,
+            session=async_db,
+            current_user=user,
+        )
         result = {"result": True}
         assert response.status_code == 201
-        assert response.json() == result
+        assert json.loads(response.body.decode('utf-8')) == result
 
-    async def test_delete_likes(self, client, async_db):
-        response = await client.delete("/api/tweets/1/likes")
-        assert response.status_code == 400
-        response = await client.delete("/api/tweets/2/likes")
+    async def test_delete_likes(self, async_db):
+        user = await async_db.get(User, 1)
+
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_likes(
+                id=1,
+                session=async_db,
+                current_user=user,
+            )
+        assert exc_info.value.status_code == 400
+
+        response = await delete_likes(
+            id=2,
+            session=async_db,
+            current_user=user,
+        )
         assert response.status_code == 204
-
 
 # class TestMediaApi:
 #     def test_post(self, client, async_db):
@@ -81,8 +108,14 @@ class TestTweetsApi:
 
 
 class TestUserApi:
-    async def test_get_id(self, client, async_db):
-        response = await client.get("/api/users/2")
+    async def test_get_id(self, async_db):
+        user = await async_db.get(User, 1)
+
+        response = await get_user_id(
+            id=2,
+            session=async_db,
+            current_user=user,
+        )
         result = {
             "result": True,
             "user": {
@@ -93,10 +126,16 @@ class TestUserApi:
             },
         }
         assert response.status_code == 200
-        assert response.json() == result
+        assert json.loads(response.body.decode('utf-8')) == result
 
-    async def test_get_me(self, client, async_db):
-        response = await client.get("/api/users/me")
+    async def test_get_me(self, async_db):
+        user = await async_db.get(User, 1)
+
+        response = await get_user_id(
+            id='me',
+            session=async_db,
+            current_user=user,
+        )
         result = {
             "result": True,
             "user": {
@@ -107,10 +146,16 @@ class TestUserApi:
             },
         }
         assert response.status_code == 200
-        assert response.json() == result
+        assert json.loads(response.body.decode('utf-8')) == result
 
     async def test_post_follow(self, client, async_db):
-        response = await client.post("/api/users/4/follow")
+        user = await async_db.get(User, 1)
+
+        response = await post_follow(
+            id=4,
+            session=async_db,
+            current_user=user,
+        )
         follower_exist = await Follow.get_follow(
             from_user=1,
             to_user=4,
@@ -118,10 +163,16 @@ class TestUserApi:
         )
         assert follower_exist == {"from": 1, "to": 4}
         assert response.status_code == 201
-        assert response.json() == {"result": True}
+        assert json.loads(response.body.decode('utf-8')) == {"result": True}
 
     async def test_delete_follow(self, client, async_db):
-        response = await client.delete("/api/users/2/follow")
+        user = await async_db.get(User, 1)
+
+        response = await delete_follow(
+            id=2,
+            session=async_db,
+            current_user=user,
+        )
         follower_exist = await Follow.get_follow(
             from_user=1,
             to_user=2,
@@ -129,3 +180,4 @@ class TestUserApi:
         )
         assert follower_exist == {}
         assert response.status_code == 204
+        assert json.loads(response.body.decode('utf-8')) == {'result': True}

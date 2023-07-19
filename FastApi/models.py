@@ -47,7 +47,6 @@ class Follow(Base):
             )
         )
         data = (await session.execute(query)).scalars().first()
-        print(data)
         result = {}
         if data:
             result["to"] = data.to_user.id

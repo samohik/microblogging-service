@@ -69,22 +69,6 @@ async def client():
         yield ac
 
 
-async def authenticate(client):
-    response = await client.post(
-        "/auth/jwt/login",
-        data={
-            "username": "asdad123@gmail.com",
-            "password": "Test123",
-        },
-    )
-    token = response.json()["access_token"]
-
-    headers = {"Authorization": f"Bearer {token}"}
-    await client.get(
-        "/protected-route", headers=headers
-    )
-
-
 async def preloaded_data(session: AsyncSession):
     # Users
     user_me = User(
